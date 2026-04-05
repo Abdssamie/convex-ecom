@@ -34,7 +34,30 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       createCart: FunctionReference<
         "mutation",
         "internal",
-        { currency: string },
+        { currencyCode: string; priceListId?: string },
+        string,
+        Name
+      >;
+      createOrderAddress: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          address1?: string;
+          address2?: string;
+          cartId: string;
+          city?: string;
+          company?: string;
+          countryCode?: string;
+          customerId?: string;
+          firstName?: string;
+          lastName?: string;
+          metadata?: any;
+          orderId?: string;
+          phone?: string;
+          postalCode?: string;
+          province?: string;
+          role: "shipping" | "billing";
+        },
         string,
         Name
       >;
@@ -46,11 +69,16 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           cart: {
             _creationTime: number;
             _id: string;
-            currency: string;
+            completedAt?: number;
+            currencyCode: string;
             customerId?: string;
+            email?: string;
+            locale?: string;
             metadata?: any;
+            priceListId?: string;
+            regionId?: string;
+            salesChannelId?: string;
             shippingTotal: number;
-            status: "active" | "completed" | "canceled";
             subtotal: number;
             total: number;
           };
@@ -58,11 +86,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             _creationTime: number;
             _id: string;
             cartId: string;
+            isTaxInclusive?: boolean;
             metadata?: any;
+            productId?: string;
             quantity: number;
+            requiresShipping?: boolean;
+            thumbnail?: string;
+            title?: string;
             total: number;
             unitPrice: number;
             variantId: string;
+            variantSku?: string;
+            variantTitle?: string;
           }>;
         },
         Name
@@ -70,35 +105,46 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
       listProducts: FunctionReference<
         "query",
         "internal",
-        { currency: string; limit?: number },
+        { currencyCode: string; limit?: number; priceListId?: string },
         Array<{
           product: {
             _creationTime: number;
             _id: string;
             description?: string;
+            discountable: boolean;
+            externalId?: string;
             handle: string;
+            isGiftcard: boolean;
             metadata?: any;
-            status: "draft" | "published" | "archived";
+            status: "draft" | "proposed" | "published" | "rejected";
+            subtitle?: string;
+            thumbnail?: string;
             title: string;
           };
           variants: Array<{
             _creationTime: number;
             _id: string;
             allowBackorder: boolean;
+            barcode?: string;
+            inventoryItemId?: string;
             manageInventory: boolean;
             metadata?: any;
             price?: {
               _creationTime: number;
               _id: string;
               amount: number;
-              currency: string;
-              maxQty?: number;
-              minQty?: number;
+              currencyCode: string;
+              maxQuantity?: number;
+              minQuantity?: number;
+              priceListId: null | string;
+              title?: string;
               variantId: string;
             };
             productId: string;
             sku?: string;
+            thumbnail?: string;
             title: string;
+            variantRank: number;
           }>;
         }>,
         Name

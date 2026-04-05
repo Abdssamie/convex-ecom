@@ -6,9 +6,9 @@ import type { ComponentApi } from "../component/_generated/component.js";
 // See the example/convex/example.ts file for how to use this component.
 
 type Operation =
-  | { type: "list_products"; currencyCode: string }
+  | { type: "list_products"; currencyCode: string; priceListId?: string }
   | { type: "get_cart"; cartId: string }
-  | { type: "create_cart"; currencyCode: string }
+  | { type: "create_cart"; currencyCode: string; priceListId?: string }
   | { type: "add_item"; cartId: string; variantId: string; quantity: number }
   | { type: "update_item"; cartItemId: string; quantity: number }
   | { type: "remove_item"; cartItemId: string }
@@ -52,11 +52,19 @@ export function exposeApi(
 ) {
   return {
     listProducts: queryGeneric({
-      args: { currencyCode: v.string(), limit: v.optional(v.number()) },
+      args: {
+        currencyCode: v.string(),
+        limit: v.optional(v.number()),
+        priceListId: v.optional(v.string()),
+      },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
-          { type: "list_products", currencyCode: args.currencyCode },
+          {
+            type: "list_products",
+            currencyCode: args.currencyCode,
+            priceListId: args.priceListId,
+          },
           options.auth,
         );
         return await ctx.runQuery(component.lib.listProducts, args);
@@ -76,11 +84,15 @@ export function exposeApi(
       },
     }),
     createCart: mutationGeneric({
-      args: { currencyCode: v.string() },
+      args: { currencyCode: v.string(), priceListId: v.optional(v.string()) },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
-          { type: "create_cart", currencyCode: args.currencyCode },
+          {
+            type: "create_cart",
+            currencyCode: args.currencyCode,
+            priceListId: args.priceListId,
+          },
           options.auth,
         );
         return await ctx.runMutation(component.lib.createCart, args);

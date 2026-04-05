@@ -18,21 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - name: Node setup
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+      - name: Bun setup
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          cache-dependency-path: package.json
-          node-version: "24.x"
-          cache: "npm"
+          bun-version: latest
 
       - name: Install and build
         run: |
-          npm i
-          npm run build
+          bun install --frozen-lockfile
+          bun run build
       - name: Publish package for testing branch
-        run: npx pkg-pr-new publish || echo "Have you set up pkg-pr-new for this repo?"
+        run: bunx pkg-pr-new publish || echo "Have you set up pkg-pr-new for this repo?"
       - name: Test
         run: |
-          npm run test
-          npm run typecheck
-          npm run lint
+          bun run test
+          bun run typecheck
+          bun run lint

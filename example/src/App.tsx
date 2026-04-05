@@ -3,7 +3,10 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 
 function App() {
-  const products = useQuery(api.example.listProducts, { currencyCode: "usd" });
+  const products = useQuery(api.example.listProducts, {
+    currencyCode: "usd",
+    priceListId: undefined,
+  });
   const createCart = useMutation(api.example.createCart);
 
   return (
