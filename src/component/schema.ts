@@ -36,10 +36,7 @@ const attemptStatus = v.union(
 
 const addressRole = v.union(v.literal("shipping"), v.literal("billing"));
 
-const promotionType = v.union(
-  v.literal("standard"),
-  v.literal("buyget"),
-);
+const promotionType = v.union(v.literal("standard"), v.literal("buyget"));
 
 const promotionStatus = v.union(
   v.literal("draft"),
@@ -143,10 +140,19 @@ export default defineSchema({
     amount: v.number(),
     minQuantity: v.optional(v.number()),
     maxQuantity: v.optional(v.number()),
-    priceListId: v.optional(v.id("priceLists")),
+    /**
+     * `null` = base catalog price; otherwise scoped to a price list.
+     * Use index `by_variant_currency_and_price_list_id` for deterministic lookups.
+     */
+    priceListId: v.union(v.null(), v.id("priceLists")),
   })
     .index("by_variant", ["variantId"])
     .index("by_variant_and_currency_code", ["variantId", "currencyCode"])
+    .index("by_variant_currency_and_price_list_id", [
+      "variantId",
+      "currencyCode",
+      "priceListId",
+    ])
     .index("by_price_list_id", ["priceListId"]),
 
   inventoryItems: defineTable({
@@ -236,8 +242,8 @@ export default defineSchema({
 
   taxRates: defineTable({
     taxRegionId: v.id("taxRegions"),
-    /** Percentage rate (e.g. 20 for 20%); null when using rule-only behavior. */
-    rate: v.optional(v.number()),
+    /** Percentage rate (e.g. 20 for 20%); null or omitted for rule-only behavior. */
+    rate: v.optional(v.union(v.null(), v.number())),
     code: v.string(),
     name: v.string(),
     isDefault: v.boolean(),
@@ -291,6 +297,7 @@ export default defineSchema({
     customerId: v.optional(v.id("customers")),
     regionId: v.optional(v.id("regions")),
     salesChannelId: v.optional(v.id("salesChannels")),
+    priceListId: v.optional(v.id("priceLists")),
     email: v.optional(v.string()),
     currencyCode: v.string(),
     locale: v.optional(v.string()),
@@ -353,7 +360,7 @@ export default defineSchema({
   orderAddresses: defineTable({
     role: addressRole,
     orderId: v.optional(v.id("orders")),
-    cartId: v.optional(v.id("carts")),
+    cartId: v.id("carts"),
     customerId: v.optional(v.id("customers")),
     company: v.optional(v.string()),
     firstName: v.optional(v.string()),

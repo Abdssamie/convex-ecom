@@ -5,20 +5,29 @@ import { v } from "convex/values";
 import type { Auth } from "convex/server";
 
 export const listProducts = query({
-  args: { currencyCode: v.string(), limit: v.optional(v.number()) },
+  args: {
+    currencyCode: v.string(),
+    limit: v.optional(v.number()),
+    priceListId: v.optional(v.id("priceLists")),
+  },
   handler: async (ctx, args) => {
     return await ctx.runQuery(components.convexEcommerce.lib.listProducts, {
       currencyCode: args.currencyCode,
       limit: args.limit,
+      priceListId: args.priceListId,
     });
   },
 });
 
 export const createCart = mutation({
-  args: { currencyCode: v.string() },
+  args: {
+    currencyCode: v.string(),
+    priceListId: v.optional(v.id("priceLists")),
+  },
   handler: async (ctx, args) => {
     return await ctx.runMutation(components.convexEcommerce.lib.createCart, {
       currencyCode: args.currencyCode,
+      priceListId: args.priceListId,
     });
   },
 });

@@ -4,8 +4,9 @@ import {
   mutation,
   internalMutation,
   type MutationCtx,
+  type QueryCtx,
 } from "./_generated/server.js";
-import type { Id } from "./_generated/dataModel.js";
+import type { Doc, Id } from "./_generated/dataModel.js";
 import schema from "./schema.js";
 
 const productValidator = schema.tables.products.validator.extend({
@@ -33,14 +34,49 @@ const priceValidator = schema.tables.prices.validator.extend({
   _creationTime: v.number(),
 });
 
+const addressRole = v.union(v.literal("shipping"), v.literal("billing"));
+
 const variantWithPriceValidator = variantValidator.extend({
   price: v.optional(priceValidator),
 });
+
+async function getBasePriceForVariant(
+  ctx: QueryCtx | MutationCtx,
+  variantId: Id<"variants">,
+  currencyCode: string,
+  priceListId?: Id<"priceLists">,
+): Promise<Doc<"prices"> | null> {
+  if (priceListId) {
+    const listPrice = await ctx.db
+      .query("prices")
+      .withIndex("by_variant_currency_and_price_list_id", (q) =>
+        q
+          .eq("variantId", variantId)
+          .eq("currencyCode", currencyCode)
+          .eq("priceListId", priceListId),
+      )
+      .first();
+    if (listPrice) {
+      return listPrice;
+    }
+  }
+
+  return await ctx.db
+    .query("prices")
+    .withIndex("by_variant_currency_and_price_list_id", (q) =>
+      q
+        .eq("variantId", variantId)
+        .eq("currencyCode", currencyCode)
+        .eq("priceListId", null),
+    )
+    .first();
+}
 
 export const listProducts = query({
   args: {
     currencyCode: v.string(),
     limit: v.optional(v.number()),
+    priceListId: v.optional(v.id("priceLists")),
   },
   returns: v.array(
     v.object({
@@ -62,14 +98,12 @@ export const listProducts = query({
           .collect();
         const variantsWithPrice = await Promise.all(
           variants.map(async (variant) => {
-            const price = await ctx.db
-              .query("prices")
-              .withIndex("by_variant_and_currency_code", (q) =>
-                q
-                  .eq("variantId", variant._id)
-                  .eq("currencyCode", args.currencyCode),
-              )
-              .first();
+            const price = await getBasePriceForVariant(
+              ctx,
+              variant._id,
+              args.currencyCode,
+              args.priceListId,
+            );
             return { ...variant, price: price ?? undefined };
           }),
         );
@@ -106,11 +140,13 @@ export const getCart = query({
 export const createCart = mutation({
   args: {
     currencyCode: v.string(),
+    priceListId: v.optional(v.id("priceLists")),
   },
   returns: v.id("carts"),
   handler: async (ctx, args) => {
     const cartId = await ctx.db.insert("carts", {
       currencyCode: args.currencyCode,
+      priceListId: args.priceListId,
       subtotal: 0,
       shippingTotal: 0,
       total: 0,
@@ -136,12 +172,12 @@ export const addItem = mutation({
       throw new Error("Cart not found or already completed");
     }
 
-    const price = await ctx.db
-      .query("prices")
-      .withIndex("by_variant_and_currency_code", (q) =>
-        q.eq("variantId", args.variantId).eq("currencyCode", cart.currencyCode),
-      )
-      .first();
+    const price = await getBasePriceForVariant(
+      ctx,
+      args.variantId,
+      cart.currencyCode,
+      cart.priceListId,
+    );
 
     if (!price) {
       throw new Error("No price for variant in cart currency");
@@ -236,6 +272,101 @@ export const recalcCart = internalMutation({
   },
   handler: async (ctx, args) => {
     await recalcCartTotals(ctx, args.cartId);
+  },
+});
+
+export const seedPriceListScenario = internalMutation({
+  args: {
+    currencyCode: v.string(),
+    baseAmount: v.number(),
+    listAmount: v.number(),
+  },
+  returns: v.object({
+    productId: v.id("products"),
+    variantId: v.id("variants"),
+    priceListId: v.id("priceLists"),
+  }),
+  handler: async (ctx, args) => {
+    const productId = await ctx.db.insert("products", {
+      title: "Seed Product",
+      handle: "seed-product",
+      status: "published",
+      isGiftcard: false,
+      discountable: true,
+    });
+    const variantId = await ctx.db.insert("variants", {
+      productId,
+      title: "Default",
+      allowBackorder: false,
+      manageInventory: false,
+      variantRank: 0,
+    });
+    await ctx.db.insert("prices", {
+      variantId,
+      currencyCode: args.currencyCode,
+      amount: args.baseAmount,
+      priceListId: null,
+    });
+    const priceListId = await ctx.db.insert("priceLists", {
+      title: "Seed List",
+      description: "Seed list",
+      status: "active",
+      type: "override",
+    });
+    await ctx.db.insert("prices", {
+      variantId,
+      currencyCode: args.currencyCode,
+      amount: args.listAmount,
+      priceListId,
+    });
+
+    return { productId, variantId, priceListId };
+  },
+});
+
+export const createOrderAddress = mutation({
+  args: {
+    role: addressRole,
+    cartId: v.id("carts"),
+    orderId: v.optional(v.id("orders")),
+    customerId: v.optional(v.id("customers")),
+    company: v.optional(v.string()),
+    firstName: v.optional(v.string()),
+    lastName: v.optional(v.string()),
+    address1: v.optional(v.string()),
+    address2: v.optional(v.string()),
+    city: v.optional(v.string()),
+    countryCode: v.optional(v.string()),
+    province: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  },
+  returns: v.id("orderAddresses"),
+  handler: async (ctx, args) => {
+    if (!args.cartId && !args.orderId && !args.customerId) {
+      throw new Error(
+        "Order address must be linked to a cart, order, or customer",
+      );
+    }
+
+    return await ctx.db.insert("orderAddresses", {
+      role: args.role,
+      cartId: args.cartId,
+      orderId: args.orderId,
+      customerId: args.customerId,
+      company: args.company,
+      firstName: args.firstName,
+      lastName: args.lastName,
+      address1: args.address1,
+      address2: args.address2,
+      city: args.city,
+      countryCode: args.countryCode,
+      province: args.province,
+      postalCode: args.postalCode,
+      phone: args.phone,
+      metadata: args.metadata,
+    });
   },
 });
 

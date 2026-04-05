@@ -5,11 +5,11 @@ This is a Convex component, ready to be published on npm.
 To develop this component, run a dev process in the example project:
 
 ```sh
-npm i
-npm run dev
+bun install
+bun run dev
 ```
 
-`npm i` will do the install and an initial build. `npm run dev` will start a
+`bun install` will install dependencies. `bun run dev` will start a
 file watcher to re-build the component, as well as the example project frontend
 and backend, which does codegen and installs the component.
 
@@ -21,8 +21,7 @@ Modify the schema and index files in src/component/ to define your component.
 .
 ├── README.md           documentation of your component
 ├── package.json        component name, version number, other metadata
-├── package-lock.json   Components are like libraries, package-lock.json
-│                       is .gitignored and ignored by consumers.
+├── bun.lock            Lockfile for reproducible installs (Bun).
 ├── src
 │   ├── component/
 │   │   ├── _generated/ Files here are generated for the component.
@@ -81,10 +80,10 @@ export default app;
 import { components } from "./_generated/api";
 
 export const createCart = mutation({
-  args: { currency: v.string() },
+  args: { currencyCode: v.string() },
   handler: async (ctx, args) => {
     return await ctx.runMutation(components.convexEcommerce.lib.createCart, {
-      currency: args.currency,
+      currencyCode: args.currencyCode,
     });
   },
 });
@@ -101,6 +100,6 @@ No HTTP routes are exposed in the MVP.
 Run the example:
 
 ```sh
-npm i
-npm run dev
+bun install
+bun run dev
 ```
