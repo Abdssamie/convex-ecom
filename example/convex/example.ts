@@ -1,0 +1,68 @@
+import { mutation, query } from "./_generated/server.js";
+import { components } from "./_generated/api.js";
+import { exposeApi } from "@abdssamie/convex-ecommerce";
+import { v } from "convex/values";
+import type { Auth } from "convex/server";
+
+export const listProducts = query({
+  args: { currencyCode: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.convexEcommerce.lib.listProducts, {
+      currencyCode: args.currencyCode,
+      limit: args.limit,
+    });
+  },
+});
+
+export const createCart = mutation({
+  args: { currencyCode: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.runMutation(components.convexEcommerce.lib.createCart, {
+      currencyCode: args.currencyCode,
+    });
+  },
+});
+
+export const addItem = mutation({
+  args: {
+    cartId: v.id("carts"),
+    variantId: v.id("variants"),
+    quantity: v.number(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.runMutation(components.convexEcommerce.lib.addItem, {
+      cartId: args.cartId,
+      variantId: args.variantId,
+      quantity: args.quantity,
+    });
+  },
+});
+
+export const getCart = query({
+  args: { cartId: v.id("carts") },
+  handler: async (ctx, args) => {
+    return await ctx.runQuery(components.convexEcommerce.lib.getCart, {
+      cartId: args.cartId,
+    });
+  },
+});
+
+// Here is an alternative way to use the component's methods directly by
+// re-exporting the component's API:
+export const {
+  listProducts: listProductsViaClient,
+  createCart: createCartViaClient,
+  addItem: addItemViaClient,
+  getCart: getCartViaClient,
+  updateItem: updateItemViaClient,
+  removeItem: removeItemViaClient,
+  setCustomer: setCustomerViaClient,
+} = exposeApi(components.convexEcommerce, {
+  auth: async (ctx, _operation) => {
+    return (await getAuthUserId(ctx)) ?? null;
+  },
+});
+
+async function getAuthUserId(ctx: { auth: Auth }) {
+  return (await ctx.auth.getUserIdentity())?.subject ?? null;
+}
