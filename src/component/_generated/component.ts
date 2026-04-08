@@ -3910,6 +3910,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        seedPriceListScenario: FunctionReference<
+          "mutation",
+          "internal",
+          { baseAmount: number; currencyCode: string; listAmount: number },
+          { priceListId: string; productId: string; variantId: string },
+          Name
+        >;
         setCustomer: FunctionReference<
           "mutation",
           "internal",

@@ -1,10 +1,8 @@
 /// <reference types="vite/client" />
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { api, internal } from "./_generated/api";
+import { api } from "./_generated/api";
 import { initConvexTest } from "./setup.test";
-
-const internalAny = internal as any;
 
 describe("component lib", () => {
   beforeEach(async () => {
@@ -27,7 +25,7 @@ describe("component lib", () => {
   test("price lists override base price", async () => {
     const t = initConvexTest();
     const { variantId, priceListId } = await t.mutation(
-      (internal as any).store.orders.seedPriceListScenario,
+      api.store.orders.seedPriceListScenario,
       {
         currencyCode: "usd",
         baseAmount: 2000,
@@ -58,7 +56,7 @@ describe("component lib", () => {
   test("createOrderFromCart snapshots cart", async () => {
     const t = initConvexTest();
     const { variantId } = await t.mutation(
-      internalAny.store.orders.seedPriceListScenario,
+      api.store.orders.seedPriceListScenario,
       {
         currencyCode: "usd",
         baseAmount: 2000,
