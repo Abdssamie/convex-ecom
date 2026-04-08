@@ -56,7 +56,7 @@ export function exposeApi(
       args: {
         paginationOpts: paginationOptsValidator,
         currencyCode: v.string(),
-        priceListId: v.optional(v.string()),
+        priceListId: v.optional(v.id("priceLists")),
       },
       handler: async (ctx, args) => {
         await authorize(
@@ -72,7 +72,7 @@ export function exposeApi(
       },
     }),
     getCart: queryGeneric({
-      args: { cartId: v.string() },
+      args: { cartId: v.id("carts") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -85,7 +85,7 @@ export function exposeApi(
       },
     }),
     createCart: mutationGeneric({
-      args: { currencyCode: v.string(), priceListId: v.optional(v.string()) },
+      args: { currencyCode: v.string(), priceListId: v.optional(v.id("priceLists")) },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -101,8 +101,8 @@ export function exposeApi(
     }),
     addItem: mutationGeneric({
       args: {
-        cartId: v.string(),
-        variantId: v.string(),
+        cartId: v.id("carts"),
+        variantId: v.id("variants"),
         quantity: v.number(),
       },
       handler: async (ctx, args) => {
@@ -120,7 +120,7 @@ export function exposeApi(
       },
     }),
     updateItem: mutationGeneric({
-      args: { cartItemId: v.string(), quantity: v.number() },
+      args: { cartItemId: v.id("cartItems"), quantity: v.number() },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -135,7 +135,7 @@ export function exposeApi(
       },
     }),
     removeItem: mutationGeneric({
-      args: { cartItemId: v.string() },
+      args: { cartItemId: v.id("cartItems") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -146,7 +146,7 @@ export function exposeApi(
       },
     }),
     setCustomer: mutationGeneric({
-      args: { cartId: v.string(), customerId: v.string() },
+      args: { cartId: v.id("carts"), customerId: v.id("customers") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,

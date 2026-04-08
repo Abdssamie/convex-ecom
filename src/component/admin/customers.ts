@@ -68,13 +68,13 @@ export const createCustomer = mutation({
     }
     return await ctx.db.insert("customers", {
       userId: args.userId,
-      email: args.email,
-      companyName: args.companyName,
-      firstName: args.firstName,
-      lastName: args.lastName,
-      phone: args.phone,
       hasAccount: args.hasAccount,
-      metadata: args.metadata,
+      ...(args.email !== undefined && { email: args.email }),
+      ...(args.companyName !== undefined && { companyName: args.companyName }),
+      ...(args.firstName !== undefined && { firstName: args.firstName }),
+      ...(args.lastName !== undefined && { lastName: args.lastName }),
+      ...(args.phone !== undefined && { phone: args.phone }),
+      ...(args.metadata !== undefined && { metadata: args.metadata }),
     });
   },
 });

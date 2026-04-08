@@ -386,6 +386,7 @@ export default defineSchema({
     .index("by_order_id", ["orderId"])
     .index("by_order_id_and_role", ["orderId", "role"])
     .index("by_cart_id", ["cartId"])
+    .index("by_cart_id_and_role", ["cartId", "role"])
     .index("by_customer_id", ["customerId"]),
 
   /**

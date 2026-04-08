@@ -65,10 +65,9 @@ export const createTaxRate = mutation({
     if (args.taxRate.isDefault) {
       const existingDefault = await ctx.db
         .query("taxRates")
-        .withIndex("by_tax_region_id", (q) =>
-          q.eq("taxRegionId", args.taxRate.taxRegionId),
+        .withIndex("by_tax_region_id_and_is_default", (q) =>
+          q.eq("taxRegionId", args.taxRate.taxRegionId).eq("isDefault", true),
         )
-        .filter((q) => q.eq(q.field("isDefault"), true))
         .first();
       if (existingDefault) {
         throw new Error("Default tax rate already exists for region");
@@ -124,8 +123,9 @@ export const updateTaxRate = mutation({
     if (isDefault) {
       const existingDefault = await ctx.db
         .query("taxRates")
-        .withIndex("by_tax_region_id", (q) => q.eq("taxRegionId", taxRegionId))
-        .filter((q) => q.eq(q.field("isDefault"), true))
+        .withIndex("by_tax_region_id_and_is_default", (q) =>
+          q.eq("taxRegionId", taxRegionId).eq("isDefault", true),
+        )
         .first();
       if (existingDefault && existingDefault._id !== args.taxRateId) {
         throw new Error("Default tax rate already exists for region");

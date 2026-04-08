@@ -12,13 +12,19 @@ export const listProducts = query({
     priceListId: v.optional(v.id("priceLists")),
   },
   handler: async (ctx, args) => {
+    let isPriceListActive: boolean | undefined = undefined;
     if (args.priceListId) {
-      await requireDoc(
+      const priceList = await requireDoc(
         ctx,
         "priceLists",
         args.priceListId,
         "Price list not found",
       );
+      const now = Date.now();
+      isPriceListActive =
+        priceList.status === "active" &&
+        (priceList.startsAt === undefined || now >= priceList.startsAt) &&
+        (priceList.endsAt === undefined || now <= priceList.endsAt);
     }
 
     const paginatedProducts = await ctx.db
@@ -40,8 +46,9 @@ export const listProducts = query({
               variant._id,
               args.currencyCode,
               args.priceListId,
+              isPriceListActive,
             );
-            return { ...variant, price: price ?? undefined };
+            return { ...variant, price: price ?? null };
           }),
         );
 

@@ -47,8 +47,9 @@ export const createOrderAddress = mutation({
     // Guard against duplicate role for the same cart
     const existing = await ctx.db
       .query("orderAddresses")
-      .withIndex("by_cart_id", (q) => q.eq("cartId", args.cartId))
-      .filter((q) => q.eq(q.field("role"), args.role))
+      .withIndex("by_cart_id_and_role", (q) =>
+        q.eq("cartId", args.cartId).eq("role", args.role),
+      )
       .first();
     if (existing) {
       throw new Error(
