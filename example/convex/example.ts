@@ -1,5 +1,5 @@
-import { mutation, query } from "./_generated/server.js";
-import { components } from "./_generated/api.js";
+import { mutation, query } from "./_generated/server";
+import { components } from "./_generated/api";
 import { exposeApi } from "@abdssamie/convex-ecommerce";
 import { v } from "convex/values";
 import type { Auth } from "convex/server";
@@ -11,11 +11,14 @@ export const listProducts = query({
     priceListId: v.optional(v.id("priceLists")),
   },
   handler: async (ctx, args) => {
-    return await ctx.runQuery(components.convexEcommerce.lib.listProducts, {
-      currencyCode: args.currencyCode,
-      limit: args.limit,
-      priceListId: args.priceListId,
-    });
+    return await ctx.runQuery(
+      components.convexEcommerce.store.products.listProducts,
+      {
+        currencyCode: args.currencyCode,
+        limit: args.limit,
+        priceListId: args.priceListId,
+      },
+    );
   },
 });
 
@@ -25,10 +28,13 @@ export const createCart = mutation({
     priceListId: v.optional(v.id("priceLists")),
   },
   handler: async (ctx, args) => {
-    return await ctx.runMutation(components.convexEcommerce.lib.createCart, {
-      currencyCode: args.currencyCode,
-      priceListId: args.priceListId,
-    });
+    return await ctx.runMutation(
+      components.convexEcommerce.store.carts.createCart,
+      {
+        currencyCode: args.currencyCode,
+        priceListId: args.priceListId,
+      },
+    );
   },
 });
 
@@ -39,18 +45,21 @@ export const addItem = mutation({
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
-    return await ctx.runMutation(components.convexEcommerce.lib.addItem, {
-      cartId: args.cartId,
-      variantId: args.variantId,
-      quantity: args.quantity,
-    });
+    return await ctx.runMutation(
+      components.convexEcommerce.store.carts.addItem,
+      {
+        cartId: args.cartId,
+        variantId: args.variantId,
+        quantity: args.quantity,
+      },
+    );
   },
 });
 
 export const getCart = query({
   args: { cartId: v.id("carts") },
   handler: async (ctx, args) => {
-    return await ctx.runQuery(components.convexEcommerce.lib.getCart, {
+    return await ctx.runQuery(components.convexEcommerce.store.carts.getCart, {
       cartId: args.cartId,
     });
   },

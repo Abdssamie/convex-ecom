@@ -1,7 +1,7 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import type { Auth } from "convex/server";
 import { v } from "convex/values";
-import type { ComponentApi } from "../component/_generated/component.js";
+import type { ComponentApi } from "../component/_generated/component";
 
 // See the example/convex/example.ts file for how to use this component.
 
@@ -67,7 +67,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runQuery(component.lib.listProducts, args);
+        return await ctx.runQuery(component.store.products.listProducts, args);
       },
     }),
     getCart: queryGeneric({
@@ -78,7 +78,7 @@ export function exposeApi(
           { type: "get_cart", cartId: args.cartId },
           options.auth,
         );
-        return await ctx.runQuery(component.lib.getCart, {
+        return await ctx.runQuery(component.store.carts.getCart, {
           cartId: args.cartId,
         });
       },
@@ -95,7 +95,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.createCart, args);
+        return await ctx.runMutation(component.store.carts.createCart, args);
       },
     }),
     addItem: mutationGeneric({
@@ -115,7 +115,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.addItem, args);
+        return await ctx.runMutation(component.store.carts.addItem, args);
       },
     }),
     updateItem: mutationGeneric({
@@ -130,7 +130,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.updateItem, args);
+        return await ctx.runMutation(component.store.carts.updateItem, args);
       },
     }),
     removeItem: mutationGeneric({
@@ -141,7 +141,7 @@ export function exposeApi(
           { type: "remove_item", cartItemId: args.cartItemId },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.removeItem, args);
+        return await ctx.runMutation(component.store.carts.removeItem, args);
       },
     }),
     setCustomer: mutationGeneric({
@@ -156,7 +156,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.setCustomer, args);
+        return await ctx.runMutation(component.store.carts.setCustomer, args);
       },
     }),
   };

@@ -1,26 +1,30 @@
 # AGENTS.md
 
-Instructions for AI coding agents working with this codebase.
+## High-signal repo facts
 
-<!-- opensrc:start -->
+- Dev entrypoint is the example app; run from repo root: `bun install` then
+  `bun run dev` (starts Convex dev, Vite, and codegen/build watcher).
+- Codegen/build pipeline is `bun run build:codegen` (runs
+  `convex codegen --component-dir ./src/component` then `bun run build`).
+- CI order is build -> test -> typecheck -> lint; build step is `bun run build`
+  (not `build:codegen`).
+- Tests run with Vitest `edge-runtime` and include `src/**/*.test.ts` and
+  `example/**/*.test.ts`.
+- Generated files live under `src/component/_generated/` and
+  `example/convex/_generated/`; don’t hand-edit them.
+- `dist/` is generated build output; `build:clean` deletes `dist/` and
+  `*.tsbuildinfo`.
+- Component name is `convexEcommerce` (see `src/component/convex.config.ts`);
+  example app uses the component via `example/convex/convex.config.ts`.
+- `predev` runs an initial build + `convex dev --once` unless `.env.local` or
+  `dist/` already exists; backend dev uses `convex dev --typecheck-components`.
 
-## Source Code Reference
+## Useful commands
 
-Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details.
-
-See `opensrc/sources.json` for the list of available packages and their versions.
-
-Use this source code when you need to understand how a package works internally, not just its types/interface.
-
-### Fetching Additional Source Code
-
-To fetch source code for a package or repository you need to understand, run:
-
-```bash
-npx opensrc <package>           # npm package (e.g., npx opensrc zod)
-npx opensrc pypi:<package>      # Python package (e.g., npx opensrc pypi:requests)
-npx opensrc crates:<package>    # Rust crate (e.g., npx opensrc crates:serde)
-npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
-```
-
-<!-- opensrc:end -->
+- Dev: `bun run dev`
+- Build (component): `bun run build`
+- Codegen + build: `bun run build:codegen`
+- Tests: `bun run test`
+- Typecheck: `bun run typecheck` (runs root, `example/`, and `example/convex`
+  tsconfig)
+- Lint: `bun run lint`

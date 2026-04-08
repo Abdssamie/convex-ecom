@@ -8,9 +8,9 @@ import {
   type GenericSchema,
   type SchemaDefinition,
 } from "convex/server";
-import { type ComponentApi } from "../component/_generated/component.js";
+import { type ComponentApi } from "../component/_generated/component";
 import { componentsGeneric } from "convex/server";
-import { register } from "../test.js";
+import { register } from "../test";
 
 export function initConvexTest<
   Schema extends SchemaDefinition<GenericSchema, boolean>,

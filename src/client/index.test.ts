@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { exposeApi } from "./index.js";
+import { exposeApi } from "./index";
 import { anyApi, type ApiFromModules } from "convex/server";
-import { components, initConvexTest } from "./setup.test.js";
+import { components, initConvexTest } from "./setup.test";
 
 export const { createCart, getCart } = exposeApi(components.convexEcommerce, {
   auth: async (ctx, _operation) => {

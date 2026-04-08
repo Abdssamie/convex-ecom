@@ -147,6 +147,7 @@ export default defineSchema({
     priceListId: v.union(v.null(), v.id("priceLists")),
   })
     .index("by_variant", ["variantId"])
+    .index("by_variant_and_price_list_id", ["variantId", "priceListId"])
     .index("by_variant_and_currency_code", ["variantId", "currencyCode"])
     .index("by_variant_currency_and_price_list_id", [
       "variantId",
@@ -182,6 +183,7 @@ export default defineSchema({
     metadata: v.optional(v.any()),
   })
     .index("by_inventory_item_id", ["inventoryItemId"])
+    .index("by_location_id", ["locationId"])
     .index("by_inventory_item_id_and_location_id", [
       "inventoryItemId",
       "locationId",
@@ -215,14 +217,19 @@ export default defineSchema({
     /** ISO 3166-1 alpha-2 */
     countryCode: v.string(),
     metadata: v.optional(v.any()),
-  }).index("by_region_and_country_code", ["regionId", "countryCode"]),
+  })
+    .index("by_region_and_country_code", ["regionId", "countryCode"])
+    .index("by_region", ["regionId"])
+    .index("by_country_code", ["countryCode"]),
 
   salesChannels: defineTable({
     name: v.string(),
     description: v.optional(v.string()),
     isDisabled: v.boolean(),
     metadata: v.optional(v.any()),
-  }).index("by_name", ["name"]),
+  })
+    .index("by_name", ["name"])
+    .index("by_is_disabled", ["isDisabled"]),
 
   /**
    * Tax jurisdiction (country / province), optionally nested under a parent region.

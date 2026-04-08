@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { test } from "vitest";
-import schema from "./schema.js";
+import schema from "./schema";
 import { convexTest } from "convex-test";
 export const modules = import.meta.glob("./**/*.*s");
 
