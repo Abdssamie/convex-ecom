@@ -62,19 +62,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listCustomers: FunctionReference<
           "query",
           "internal",
-          { email?: string; limit?: number; userId?: string },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            companyName?: string;
+          {
             email?: string;
-            firstName?: string;
-            hasAccount: boolean;
-            lastName?: string;
-            metadata?: any;
-            phone?: string;
-            userId: string;
-          }>,
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId?: string;
+          },
+          any,
           Name
         >;
         updateCustomer: FunctionReference<
@@ -345,25 +345,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listFulfillments: FunctionReference<
           "query",
           "internal",
-          { limit?: number; locationId?: string; orderId?: string },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            canceledAt?: number;
-            createdBy?: string;
-            data?: any;
-            deliveredAt?: number;
-            fulfillmentProviderId?: string;
-            locationId: string;
-            markedShippedBy?: string;
-            metadata?: any;
-            orderId: string;
-            orderShippingMethodId?: string;
-            packedAt?: number;
-            requiresShipping: boolean;
-            shippedAt?: number;
-            shippingOptionId?: string;
-          }>,
+          {
+            locationId?: string;
+            orderId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         updateFulfillment: FunctionReference<
@@ -1242,19 +1236,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listCustomers: FunctionReference<
           "query",
           "internal",
-          { email?: string; limit?: number; userId?: string },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            companyName?: string;
+          {
             email?: string;
-            firstName?: string;
-            hasAccount: boolean;
-            lastName?: string;
-            metadata?: any;
-            phone?: string;
-            userId: string;
-          }>,
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            userId?: string;
+          },
+          any,
           Name
         >;
         listFulfillmentAddresses: FunctionReference<
@@ -1311,41 +1305,35 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listFulfillments: FunctionReference<
           "query",
           "internal",
-          { limit?: number; locationId?: string; orderId?: string },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            canceledAt?: number;
-            createdBy?: string;
-            data?: any;
-            deliveredAt?: number;
-            fulfillmentProviderId?: string;
-            locationId: string;
-            markedShippedBy?: string;
-            metadata?: any;
-            orderId: string;
-            orderShippingMethodId?: string;
-            packedAt?: number;
-            requiresShipping: boolean;
-            shippedAt?: number;
-            shippingOptionId?: string;
-          }>,
+          {
+            locationId?: string;
+            orderId?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         listInventoryItems: FunctionReference<
           "query",
           "internal",
-          { limit?: number },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            description?: string;
-            metadata?: any;
-            requiresShipping: boolean;
-            sku?: string;
-            thumbnail?: string;
-            title?: string;
-          }>,
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         listInventoryLevels: FunctionReference<
@@ -1492,23 +1480,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            limit?: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
             status?: "draft" | "proposed" | "published" | "rejected";
           },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            description?: string;
-            discountable: boolean;
-            externalId?: string;
-            handle: string;
-            isGiftcard: boolean;
-            metadata?: any;
-            status: "draft" | "proposed" | "published" | "rejected";
-            subtitle?: string;
-            thumbnail?: string;
-            title: string;
-          }>,
+          any,
           Name
         >;
         listPromotionApplicationMethods: FunctionReference<
@@ -1562,22 +1544,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             campaignId?: string;
             code?: string;
             isAutomatic?: boolean;
-            limit?: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
             status?: "draft" | "active" | "inactive";
           },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            campaignId?: string;
-            code: string;
-            isAutomatic: boolean;
-            isTaxInclusive: boolean;
-            limit?: number;
-            metadata?: any;
-            status: "draft" | "active" | "inactive";
-            type: "standard" | "buyget";
-            used: number;
-          }>,
+          any,
           Name
         >;
         listRefundReasons: FunctionReference<
@@ -2150,17 +2127,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listInventoryItems: FunctionReference<
           "query",
           "internal",
-          { limit?: number },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            description?: string;
-            metadata?: any;
-            requiresShipping: boolean;
-            sku?: string;
-            thumbnail?: string;
-            title?: string;
-          }>,
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         updateInventoryItem: FunctionReference<
@@ -2726,23 +2703,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "query",
           "internal",
           {
-            limit?: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
             status?: "draft" | "proposed" | "published" | "rejected";
           },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            description?: string;
-            discountable: boolean;
-            externalId?: string;
-            handle: string;
-            isGiftcard: boolean;
-            metadata?: any;
-            status: "draft" | "proposed" | "published" | "rejected";
-            subtitle?: string;
-            thumbnail?: string;
-            title: string;
-          }>,
+          any,
           Name
         >;
         updateProduct: FunctionReference<
@@ -2990,22 +2961,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             campaignId?: string;
             code?: string;
             isAutomatic?: boolean;
-            limit?: number;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
             status?: "draft" | "active" | "inactive";
           },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            campaignId?: string;
-            code: string;
-            isAutomatic: boolean;
-            isTaxInclusive: boolean;
-            limit?: number;
-            metadata?: any;
-            status: "draft" | "active" | "inactive";
-            type: "standard" | "buyget";
-            used: number;
-          }>,
+          any,
           Name
         >;
         updatePromotion: FunctionReference<
@@ -3823,84 +3789,36 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listOrdersByCustomer: FunctionReference<
           "query",
           "internal",
-          { customerId: string; limit?: number },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            canceledAt?: number;
-            cartId: string;
-            currencyCode: string;
-            customerId?: string;
-            email?: string;
-            locale?: string;
-            metadata?: any;
-            paymentStatus:
-              | "not_paid"
-              | "awaiting"
-              | "authorized"
-              | "partially_authorized"
-              | "canceled"
-              | "failed"
-              | "partially_captured"
-              | "completed";
-            regionId?: string;
-            salesChannelId?: string;
-            status:
-              | "pending"
-              | "completed"
-              | "draft"
-              | "archived"
-              | "canceled"
-              | "requires_action";
-            total: number;
-          }>,
+          {
+            customerId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         listProducts: FunctionReference<
           "query",
           "internal",
-          { currencyCode: string; limit?: number; priceListId?: string },
-          Array<{
-            product: {
-              _creationTime: number;
-              _id: string;
-              description?: string;
-              discountable: boolean;
-              externalId?: string;
-              handle: string;
-              isGiftcard: boolean;
-              metadata?: any;
-              status: "draft" | "proposed" | "published" | "rejected";
-              subtitle?: string;
-              thumbnail?: string;
-              title: string;
+          {
+            currencyCode: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
             };
-            variants: Array<{
-              _creationTime: number;
-              _id: string;
-              allowBackorder: boolean;
-              barcode?: string;
-              inventoryItemId?: string;
-              manageInventory: boolean;
-              metadata?: any;
-              price?: {
-                _creationTime: number;
-                _id: string;
-                amount: number;
-                currencyCode: string;
-                maxQuantity?: number;
-                minQuantity?: number;
-                priceListId: null | string;
-                title?: string;
-                variantId: string;
-              };
-              productId: string;
-              sku?: string;
-              thumbnail?: string;
-              title: string;
-              variantRank: number;
-            }>;
-          }>,
+            priceListId?: string;
+          },
+          any,
           Name
         >;
         removeItem: FunctionReference<
@@ -3908,13 +3826,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "internal",
           { cartItemId: string },
           any,
-          Name
-        >;
-        seedPriceListScenario: FunctionReference<
-          "mutation",
-          "internal",
-          { baseAmount: number; currencyCode: string; listAmount: number },
-          { priceListId: string; productId: string; variantId: string },
           Name
         >;
         setCustomer: FunctionReference<
@@ -4062,44 +3973,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listOrdersByCustomer: FunctionReference<
           "query",
           "internal",
-          { customerId: string; limit?: number },
-          Array<{
-            _creationTime: number;
-            _id: string;
-            canceledAt?: number;
-            cartId: string;
-            currencyCode: string;
-            customerId?: string;
-            email?: string;
-            locale?: string;
-            metadata?: any;
-            paymentStatus:
-              | "not_paid"
-              | "awaiting"
-              | "authorized"
-              | "partially_authorized"
-              | "canceled"
-              | "failed"
-              | "partially_captured"
-              | "completed";
-            regionId?: string;
-            salesChannelId?: string;
-            status:
-              | "pending"
-              | "completed"
-              | "draft"
-              | "archived"
-              | "canceled"
-              | "requires_action";
-            total: number;
-          }>,
-          Name
-        >;
-        seedPriceListScenario: FunctionReference<
-          "mutation",
-          "internal",
-          { baseAmount: number; currencyCode: string; listAmount: number },
-          { priceListId: string; productId: string; variantId: string },
+          {
+            customerId: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         setOrderStatus: FunctionReference<
@@ -4123,48 +4008,19 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         listProducts: FunctionReference<
           "query",
           "internal",
-          { currencyCode: string; limit?: number; priceListId?: string },
-          Array<{
-            product: {
-              _creationTime: number;
-              _id: string;
-              description?: string;
-              discountable: boolean;
-              externalId?: string;
-              handle: string;
-              isGiftcard: boolean;
-              metadata?: any;
-              status: "draft" | "proposed" | "published" | "rejected";
-              subtitle?: string;
-              thumbnail?: string;
-              title: string;
+          {
+            currencyCode: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
             };
-            variants: Array<{
-              _creationTime: number;
-              _id: string;
-              allowBackorder: boolean;
-              barcode?: string;
-              inventoryItemId?: string;
-              manageInventory: boolean;
-              metadata?: any;
-              price?: {
-                _creationTime: number;
-                _id: string;
-                amount: number;
-                currencyCode: string;
-                maxQuantity?: number;
-                minQuantity?: number;
-                priceListId: null | string;
-                title?: string;
-                variantId: string;
-              };
-              productId: string;
-              sku?: string;
-              thumbnail?: string;
-              title: string;
-              variantRank: number;
-            }>;
-          }>,
+            priceListId?: string;
+          },
+          any,
           Name
         >;
       };

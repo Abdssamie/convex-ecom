@@ -1,6 +1,7 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import type { Auth } from "convex/server";
 import { v } from "convex/values";
+import { paginationOptsValidator } from "convex/server";
 import type { ComponentApi } from "../component/_generated/component";
 
 // See the example/convex/example.ts file for how to use this component.
@@ -53,8 +54,8 @@ export function exposeApi(
   return {
     listProducts: queryGeneric({
       args: {
+        paginationOpts: paginationOptsValidator,
         currencyCode: v.string(),
-        limit: v.optional(v.number()),
         priceListId: v.optional(v.string()),
       },
       handler: async (ctx, args) => {

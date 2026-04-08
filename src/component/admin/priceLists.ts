@@ -13,8 +13,6 @@ const priceListValidator = schema.tables.priceLists.validator.extend({
   _creationTime: v.number(),
 });
 
-type PriceListStatus = "active" | "draft";
-
 export const listPriceLists = query({
   args: {
     status: v.optional(priceListStatusValidator),
@@ -22,15 +20,13 @@ export const listPriceLists = query({
   },
   returns: v.array(priceListValidator),
   handler: async (ctx, args) => {
-    const status = args.status as PriceListStatus | undefined;
-    if (status === undefined) {
+    if (args.status === undefined) {
       return await ctx.db.query("priceLists").take(args.limit ?? 50);
     }
 
-    const statusValue: PriceListStatus = status;
     return await ctx.db
       .query("priceLists")
-      .withIndex("by_status", (q) => q.eq("status", statusValue))
+      .withIndex("by_status", (q) => q.eq("status", args.status!))
       .take(args.limit ?? 50);
   },
 });

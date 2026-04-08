@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
@@ -11,17 +12,16 @@ const fulfillmentValidator = schema.tables.fulfillments.validator.extend({
 
 export const listFulfillments = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     orderId: v.optional(v.id("orders")),
     locationId: v.optional(v.id("locations")),
-    limit: v.optional(v.number()),
   },
-  returns: v.array(fulfillmentValidator),
   handler: async (ctx, args) => {
     if (args.orderId) {
       return await ctx.db
         .query("fulfillments")
         .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId!))
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
     if (args.locationId) {
@@ -30,10 +30,10 @@ export const listFulfillments = query({
         .withIndex("by_location_id", (q) =>
           q.eq("locationId", args.locationId!),
         )
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
-    return await ctx.db.query("fulfillments").take(args.limit ?? 50);
+    return await ctx.db.query("fulfillments").paginate(args.paginationOpts);
   },
 });
 

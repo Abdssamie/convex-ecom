@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
@@ -11,11 +12,12 @@ const inventoryItemValidator = schema.tables.inventoryItems.validator.extend({
 
 export const listInventoryItems = query({
   args: {
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
-  returns: v.array(inventoryItemValidator),
   handler: async (ctx, args) => {
-    return await ctx.db.query("inventoryItems").take(args.limit ?? 50);
+    return await ctx.db
+      .query("inventoryItems")
+      .paginate(args.paginationOpts);
   },
 });
 

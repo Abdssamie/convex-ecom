@@ -44,6 +44,18 @@ export const createOrderAddress = mutation({
       await requireDoc(ctx, "customers", args.customerId, "Customer not found");
     }
 
+    // Guard against duplicate role for the same cart
+    const existing = await ctx.db
+      .query("orderAddresses")
+      .withIndex("by_cart_id", (q) => q.eq("cartId", args.cartId))
+      .filter((q) => q.eq(q.field("role"), args.role))
+      .first();
+    if (existing) {
+      throw new Error(
+        `An address with role "${args.role}" already exists for this cart`,
+      );
+    }
+
     return await ctx.db.insert("orderAddresses", {
       role: args.role,
       cartId: args.cartId,

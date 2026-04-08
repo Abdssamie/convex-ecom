@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { initConvexTest } from "./setup.test";
 
 describe("component lib", () => {
@@ -25,7 +25,7 @@ describe("component lib", () => {
   test("price lists override base price", async () => {
     const t = initConvexTest();
     const { variantId, priceListId } = await t.mutation(
-      api.store.orders.seedPriceListScenario,
+      internal.store.orders.seedPriceListScenario,
       {
         currencyCode: "usd",
         baseAmount: 2000,
@@ -47,16 +47,17 @@ describe("component lib", () => {
     expect(cart?.items[0]?.unitPrice).toBe(1500);
 
     const products = await t.query(api.store.products.listProducts, {
+      paginationOpts: { numItems: 10, cursor: null },
       currencyCode: "usd",
       priceListId,
     });
-    expect(products[0]?.variants[0]?.price?.amount).toBe(1500);
+    expect(products.page[0]?.variants[0]?.price?.amount).toBe(1500);
   });
 
   test("createOrderFromCart snapshots cart", async () => {
     const t = initConvexTest();
     const { variantId } = await t.mutation(
-      api.store.orders.seedPriceListScenario,
+      internal.store.orders.seedPriceListScenario,
       {
         currencyCode: "usd",
         baseAmount: 2000,

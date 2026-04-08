@@ -4,18 +4,20 @@ import { exposeApi } from "@abdssamie/convex-ecommerce";
 import { v } from "convex/values";
 import type { Auth } from "convex/server";
 
+import { paginationOptsValidator } from "convex/server";
+
 export const listProducts = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     currencyCode: v.string(),
-    limit: v.optional(v.number()),
     priceListId: v.optional(v.id("priceLists")),
   },
   handler: async (ctx, args) => {
     return await ctx.runQuery(
       components.convexEcommerce.store.products.listProducts,
       {
+        paginationOpts: args.paginationOpts,
         currencyCode: args.currencyCode,
-        limit: args.limit,
         priceListId: args.priceListId,
       },
     );

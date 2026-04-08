@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import {
@@ -13,31 +14,28 @@ const promotionValidator = schema.tables.promotions.validator.extend({
   _creationTime: v.number(),
 });
 
-type PromotionStatus = "draft" | "active" | "inactive";
 
 export const listPromotions = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     status: v.optional(promotionStatusValidator),
     code: v.optional(v.string()),
     isAutomatic: v.optional(v.boolean()),
     campaignId: v.optional(v.id("promotionCampaigns")),
-    limit: v.optional(v.number()),
   },
-  returns: v.array(promotionValidator),
   handler: async (ctx, args) => {
     if (args.code !== undefined) {
       return await ctx.db
         .query("promotions")
         .withIndex("by_code", (q) => q.eq("code", args.code!))
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
     if (args.status !== undefined) {
-      const status = args.status as PromotionStatus;
       return await ctx.db
         .query("promotions")
-        .withIndex("by_status", (q) => q.eq("status", status))
-        .take(args.limit ?? 50);
+        .withIndex("by_status", (q) => q.eq("status", args.status!))
+        .paginate(args.paginationOpts);
     }
 
     if (args.isAutomatic !== undefined) {
@@ -46,7 +44,7 @@ export const listPromotions = query({
         .withIndex("by_is_automatic", (q) =>
           q.eq("isAutomatic", args.isAutomatic!),
         )
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
     if (args.campaignId !== undefined) {
@@ -55,10 +53,10 @@ export const listPromotions = query({
         .withIndex("by_campaign_id", (q) =>
           q.eq("campaignId", args.campaignId!),
         )
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
-    return await ctx.db.query("promotions").take(args.limit ?? 50);
+    return await ctx.db.query("promotions").paginate(args.paginationOpts);
   },
 });
 

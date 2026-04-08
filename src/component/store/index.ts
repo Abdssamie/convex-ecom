@@ -13,5 +13,4 @@ export {
   getOrder,
   listOrdersByCustomer,
   setOrderStatus,
-  seedPriceListScenario,
 } from "./orders";

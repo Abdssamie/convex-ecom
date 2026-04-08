@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "../_generated/server";
+import { mutation, query, internalMutation } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { orderStatusValidator } from "../shared/validators";
@@ -85,7 +86,6 @@ export const createOrderFromCart = mutation({
           variantId: item.variantId,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          compareAtUnitPrice: undefined,
           fulfilledQuantity: 0,
           deliveredQuantity: 0,
           shippedQuantity: 0,
@@ -128,9 +128,6 @@ export const createOrderFromCart = mutation({
       amount: cart.shippingTotal,
       isTaxInclusive: false,
       isCustomAmount: true,
-      shippingOptionId: undefined,
-      data: undefined,
-      metadata: undefined,
     });
 
     await ctx.db.patch(args.cartId, { completedAt: Date.now() });
@@ -180,14 +177,14 @@ export const getOrder = query({
 export const listOrdersByCustomer = query({
   args: {
     customerId: v.id("customers"),
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
   },
-  returns: v.array(orderValidator),
   handler: async (ctx, args) => {
     return await ctx.db
       .query("orders")
       .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
-      .take(args.limit ?? 50);
+      .order("desc")
+      .paginate(args.paginationOpts);
   },
 });
 
@@ -206,7 +203,7 @@ export const setOrderStatus = mutation({
   },
 });
 
-export const seedPriceListScenario = mutation({
+export const seedPriceListScenario = internalMutation({
   args: {
     currencyCode: v.string(),
     baseAmount: v.number(),

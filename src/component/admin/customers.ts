@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
@@ -11,28 +12,27 @@ const customerValidator = schema.tables.customers.validator.extend({
 
 export const listCustomers = query({
   args: {
-    limit: v.optional(v.number()),
+    paginationOpts: paginationOptsValidator,
     userId: v.optional(v.string()),
     email: v.optional(v.string()),
   },
-  returns: v.array(customerValidator),
   handler: async (ctx, args) => {
     const { userId, email } = args;
     if (userId !== undefined) {
       return await ctx.db
         .query("customers")
         .withIndex("by_user", (q) => q.eq("userId", userId))
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
     if (email !== undefined) {
       return await ctx.db
         .query("customers")
         .withIndex("by_email", (q) => q.eq("email", email))
-        .take(args.limit ?? 50);
+        .paginate(args.paginationOpts);
     }
 
-    return await ctx.db.query("customers").take(args.limit ?? 50);
+    return await ctx.db.query("customers").paginate(args.paginationOpts);
   },
 });
 
@@ -59,6 +59,13 @@ export const createCustomer = mutation({
   },
   returns: v.id("customers"),
   handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("customers")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .first();
+    if (existing) {
+      throw new Error("Customer with this userId already exists");
+    }
     return await ctx.db.insert("customers", {
       userId: args.userId,
       email: args.email,

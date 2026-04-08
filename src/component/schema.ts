@@ -258,7 +258,8 @@ export default defineSchema({
     metadata: v.optional(v.any()),
   })
     .index("by_tax_region_id", ["taxRegionId"])
-    .index("by_tax_region_id_and_code", ["taxRegionId", "code"]),
+    .index("by_tax_region_id_and_code", ["taxRegionId", "code"])
+    .index("by_tax_region_id_and_is_default", ["taxRegionId", "isDefault"]),
 
   promotionCampaigns: defineTable({
     name: v.string(),

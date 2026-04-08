@@ -16,3 +16,9 @@ node_modules
 
 # opensrc - source code for packages
 opensrc/
+.agents
+.kiro
+.pi
+.qoder
+.claude
+.windsurf

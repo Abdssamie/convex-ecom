@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { productStatusValidator } from "../shared/validators";
@@ -10,25 +11,21 @@ const productValidator = schema.tables.products.validator.extend({
   _creationTime: v.number(),
 });
 
-type ProductStatus = "draft" | "proposed" | "published" | "rejected";
 
 export const listProducts = query({
   args: {
+    paginationOpts: paginationOptsValidator,
     status: v.optional(productStatusValidator),
-    limit: v.optional(v.number()),
   },
-  returns: v.array(productValidator),
   handler: async (ctx, args) => {
-    const status = args.status as ProductStatus | undefined;
-    if (status === undefined) {
-      return await ctx.db.query("products").take(args.limit ?? 50);
+    if (args.status === undefined) {
+      return await ctx.db.query("products").paginate(args.paginationOpts);
     }
 
-    const statusValue: ProductStatus = status;
     return await ctx.db
       .query("products")
-      .withIndex("by_status", (q) => q.eq("status", statusValue))
-      .take(args.limit ?? 50);
+      .withIndex("by_status", (q) => q.eq("status", args.status!))
+      .paginate(args.paginationOpts);
   },
 });
 
@@ -96,6 +93,6 @@ export const archiveProduct = mutation({
   },
   handler: async (ctx, args) => {
     await requireDoc(ctx, "products", args.productId, "Product not found");
-    await ctx.db.patch(args.productId, { status: "draft" });
+    await ctx.db.patch(args.productId, { status: "rejected" });
   },
 });
