@@ -11,11 +11,13 @@ describe("example", () => {
     vi.useRealTimers();
   });
 
-  test("listProducts returns empty array initially", async () => {
+  test("listProducts returns empty page initially", async () => {
     const t = initConvexTest();
-    const products = await t.query(api.example.listProducts, {
+    const result = await t.query(api.example.listProducts, {
+      paginationOpts: { numItems: 20, cursor: null },
       currencyCode: "usd",
     });
-    expect(products).toEqual([]);
+    expect(result.page).toEqual([]);
+    expect(result.isDone).toBe(true);
   });
 });

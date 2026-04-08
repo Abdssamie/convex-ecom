@@ -1,7 +1,8 @@
 import { mutationGeneric, queryGeneric } from "convex/server";
 import type { Auth } from "convex/server";
 import { v } from "convex/values";
-import type { ComponentApi } from "../component/_generated/component.js";
+import { paginationOptsValidator } from "convex/server";
+import type { ComponentApi } from "../component/_generated/component";
 
 // See the example/convex/example.ts file for how to use this component.
 
@@ -53,9 +54,9 @@ export function exposeApi(
   return {
     listProducts: queryGeneric({
       args: {
+        paginationOpts: paginationOptsValidator,
         currencyCode: v.string(),
-        limit: v.optional(v.number()),
-        priceListId: v.optional(v.string()),
+        priceListId: v.optional(v.id("priceLists")),
       },
       handler: async (ctx, args) => {
         await authorize(
@@ -67,24 +68,24 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runQuery(component.lib.listProducts, args);
+        return await ctx.runQuery(component.store.products.listProducts, args);
       },
     }),
     getCart: queryGeneric({
-      args: { cartId: v.string() },
+      args: { cartId: v.id("carts") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
           { type: "get_cart", cartId: args.cartId },
           options.auth,
         );
-        return await ctx.runQuery(component.lib.getCart, {
+        return await ctx.runQuery(component.store.carts.getCart, {
           cartId: args.cartId,
         });
       },
     }),
     createCart: mutationGeneric({
-      args: { currencyCode: v.string(), priceListId: v.optional(v.string()) },
+      args: { currencyCode: v.string(), priceListId: v.optional(v.id("priceLists")) },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -95,13 +96,13 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.createCart, args);
+        return await ctx.runMutation(component.store.carts.createCart, args);
       },
     }),
     addItem: mutationGeneric({
       args: {
-        cartId: v.string(),
-        variantId: v.string(),
+        cartId: v.id("carts"),
+        variantId: v.id("variants"),
         quantity: v.number(),
       },
       handler: async (ctx, args) => {
@@ -115,11 +116,11 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.addItem, args);
+        return await ctx.runMutation(component.store.carts.addItem, args);
       },
     }),
     updateItem: mutationGeneric({
-      args: { cartItemId: v.string(), quantity: v.number() },
+      args: { cartItemId: v.id("cartItems"), quantity: v.number() },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -130,22 +131,22 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.updateItem, args);
+        return await ctx.runMutation(component.store.carts.updateItem, args);
       },
     }),
     removeItem: mutationGeneric({
-      args: { cartItemId: v.string() },
+      args: { cartItemId: v.id("cartItems") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
           { type: "remove_item", cartItemId: args.cartItemId },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.removeItem, args);
+        return await ctx.runMutation(component.store.carts.removeItem, args);
       },
     }),
     setCustomer: mutationGeneric({
-      args: { cartId: v.string(), customerId: v.string() },
+      args: { cartId: v.id("carts"), customerId: v.id("customers") },
       handler: async (ctx, args) => {
         await authorize(
           ctx,
@@ -156,7 +157,7 @@ export function exposeApi(
           },
           options.auth,
         );
-        return await ctx.runMutation(component.lib.setCustomer, args);
+        return await ctx.runMutation(component.store.carts.setCustomer, args);
       },
     }),
   };
