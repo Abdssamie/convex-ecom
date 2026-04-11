@@ -75,6 +75,12 @@ const priceListStatus = v.union(v.literal("active"), v.literal("draft"));
 
 const priceListType = v.union(v.literal("sale"), v.literal("override"));
 
+const blogPostStatus = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
+
 export default defineSchema({
   products: defineTable({
     title: v.string(),
@@ -521,4 +527,51 @@ export default defineSchema({
     createdBy: v.optional(v.string()),
     metadata: v.optional(v.any()),
   }).index("by_payment_id", ["paymentId"]),
+
+  blogCategories: defineTable({
+    name: v.string(),
+    handle: v.string(),
+    description: v.optional(v.string()),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_name", ["name"]),
+
+  blogTags: defineTable({
+    name: v.string(),
+    handle: v.string(),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_name", ["name"]),
+
+  blogPosts: defineTable({
+    title: v.string(),
+    handle: v.string(),
+    excerpt: v.optional(v.string()),
+    content: v.string(),
+    coverImageUrl: v.optional(v.string()),
+    status: blogPostStatus,
+    publishedAt: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_status", ["status"])
+    .index("by_status_and_published_at", ["status", "publishedAt"]),
+
+  blogPostCategories: defineTable({
+    postId: v.id("blogPosts"),
+    categoryId: v.id("blogCategories"),
+  })
+    .index("by_post_id", ["postId"])
+    .index("by_category_id", ["categoryId"])
+    .index("by_post_id_and_category_id", ["postId", "categoryId"]),
+
+  blogPostTags: defineTable({
+    postId: v.id("blogPosts"),
+    tagId: v.id("blogTags"),
+  })
+    .index("by_post_id", ["postId"])
+    .index("by_tag_id", ["tagId"])
+    .index("by_post_id_and_tag_id", ["postId", "tagId"]),
 });

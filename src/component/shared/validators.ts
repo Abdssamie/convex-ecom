@@ -85,3 +85,9 @@ export const priceListTypeValidator = v.union(
   v.literal("sale"),
   v.literal("override"),
 );
+
+export const blogPostStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
