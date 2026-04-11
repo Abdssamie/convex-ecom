@@ -25,6 +25,8 @@ const paymentCollectionStatus = v.union(
   v.literal("canceled"),
   v.literal("failed"),
   v.literal("partially_captured"),
+  v.literal("partially_refunded"),
+  v.literal("refunded"),
   v.literal("completed"),
 );
 
@@ -74,6 +76,12 @@ const promotionRuleOperator = v.union(
 const priceListStatus = v.union(v.literal("active"), v.literal("draft"));
 
 const priceListType = v.union(v.literal("sale"), v.literal("override"));
+
+const blogPostStatus = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
+);
 
 export default defineSchema({
   products: defineTable({
@@ -198,10 +206,12 @@ export default defineSchema({
     lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     hasAccount: v.boolean(),
+    stripeCustomerId: v.optional(v.string()),
     metadata: v.optional(v.any()),
   })
     .index("by_user", ["userId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_stripe_customer_id", ["stripeCustomerId"]),
 
   regions: defineTable({
     name: v.string(),
@@ -521,4 +531,34 @@ export default defineSchema({
     createdBy: v.optional(v.string()),
     metadata: v.optional(v.any()),
   }).index("by_payment_id", ["paymentId"]),
+
+  blogTags: defineTable({
+    name: v.string(),
+    handle: v.string(),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_name", ["name"]),
+
+  blogPosts: defineTable({
+    title: v.string(),
+    handle: v.string(),
+    excerpt: v.optional(v.string()),
+    content: v.string(),
+    coverImageUrl: v.optional(v.string()),
+    status: blogPostStatus,
+    publishedAt: v.optional(v.number()),
+    metadata: v.optional(v.any()),
+  })
+    .index("by_handle", ["handle"])
+    .index("by_status", ["status"])
+    .index("by_status_and_published_at", ["status", "publishedAt"]),
+
+  blogPostTags: defineTable({
+    postId: v.id("blogPosts"),
+    tagId: v.id("blogTags"),
+  })
+    .index("by_post_id", ["postId"])
+    .index("by_tag_id", ["tagId"])
+    .index("by_post_id_and_tag_id", ["postId", "tagId"]),
 });

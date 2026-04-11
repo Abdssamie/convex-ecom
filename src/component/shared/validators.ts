@@ -29,6 +29,8 @@ export const paymentStatusValidator = v.union(
   v.literal("canceled"),
   v.literal("failed"),
   v.literal("partially_captured"),
+  v.literal("partially_refunded"),
+  v.literal("refunded"),
   v.literal("completed"),
 );
 
@@ -84,4 +86,10 @@ export const priceListStatusValidator = v.union(
 export const priceListTypeValidator = v.union(
   v.literal("sale"),
   v.literal("override"),
+);
+
+export const blogPostStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("published"),
+  v.literal("archived"),
 );

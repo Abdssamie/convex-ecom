@@ -50,4 +50,5 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   convexEcommerce: import("@abdssamie/convex-ecommerce/_generated/component.js").ComponentApi<"convexEcommerce">;
+  stripe: import("@convex-dev/stripe/_generated/component.js").ComponentApi<"stripe">;
 };

@@ -55,6 +55,7 @@ export const createCustomer = mutation({
     lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     hasAccount: v.boolean(),
+    stripeCustomerId: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
   returns: v.id("customers"),
@@ -74,6 +75,9 @@ export const createCustomer = mutation({
       ...(args.firstName !== undefined && { firstName: args.firstName }),
       ...(args.lastName !== undefined && { lastName: args.lastName }),
       ...(args.phone !== undefined && { phone: args.phone }),
+      ...(args.stripeCustomerId !== undefined && {
+        stripeCustomerId: args.stripeCustomerId,
+      }),
       ...(args.metadata !== undefined && { metadata: args.metadata }),
     });
   },
@@ -88,6 +92,7 @@ export const updateCustomer = mutation({
     lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     hasAccount: v.optional(v.boolean()),
+    stripeCustomerId: v.optional(v.string()),
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
@@ -99,6 +104,7 @@ export const updateCustomer = mutation({
       lastName: args.lastName,
       phone: args.phone,
       hasAccount: args.hasAccount,
+      stripeCustomerId: args.stripeCustomerId,
       metadata: args.metadata,
     });
     await ctx.db.patch(args.customerId, patch);

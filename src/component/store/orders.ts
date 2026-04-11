@@ -3,7 +3,10 @@ import { mutation, query, internalMutation } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
-import { orderStatusValidator } from "../shared/validators";
+import {
+  orderStatusValidator,
+  paymentStatusValidator,
+} from "../shared/validators";
 
 const orderValidator = schema.tables.orders.validator.extend({
   _id: v.id("orders"),
@@ -200,6 +203,17 @@ export const setOrderStatus = mutation({
         ? { status: args.status, canceledAt: Date.now() }
         : { status: args.status };
     await ctx.db.patch(args.orderId, patch);
+  },
+});
+
+export const setOrderPaymentStatus = mutation({
+  args: {
+    orderId: v.id("orders"),
+    paymentStatus: paymentStatusValidator,
+  },
+  handler: async (ctx, args) => {
+    await requireDoc(ctx, "orders", args.orderId, "Order not found");
+    await ctx.db.patch(args.orderId, { paymentStatus: args.paymentStatus });
   },
 });
 
