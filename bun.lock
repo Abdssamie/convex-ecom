@@ -4,9 +4,6 @@
   "workspaces": {
     "": {
       "name": "@example/sample-component",
-      "dependencies": {
-        "@vitest/coverage-v8": "^4.1.3",
-      },
       "devDependencies": {
         "@convex-dev/eslint-plugin": "^1.2.0",
         "@edge-runtime/vm": "^5.0.0",
@@ -16,6 +13,7 @@
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.2.0",
+        "@vitest/coverage-v8": "^4.1.3",
         "chokidar-cli": "3.0.0",
         "convex": "1.34.1",
         "convex-test": "0.0.41",
