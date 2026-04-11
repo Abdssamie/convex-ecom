@@ -29,6 +29,8 @@ export const paymentStatusValidator = v.union(
   v.literal("canceled"),
   v.literal("failed"),
   v.literal("partially_captured"),
+  v.literal("partially_refunded"),
+  v.literal("refunded"),
   v.literal("completed"),
 );
 

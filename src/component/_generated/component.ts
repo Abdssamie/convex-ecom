@@ -24,6 +24,140 @@ import type { FunctionReference } from "convex/server";
 export type ComponentApi<Name extends string | undefined = string | undefined> =
   {
     admin: {
+      blogPosts: {
+        createBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            content: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle: string;
+            metadata?: any;
+            publishedAt?: number;
+            status: "draft" | "published" | "archived";
+            tagIds?: Array<string>;
+            title: string;
+          },
+          string,
+          Name
+        >;
+        deleteBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          { postId: string },
+          any,
+          Name
+        >;
+        getBlogPost: FunctionReference<
+          "query",
+          "internal",
+          { postId: string },
+          null | {
+            _creationTime: number;
+            _id: string;
+            content: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle: string;
+            metadata?: any;
+            publishedAt?: number;
+            status: "draft" | "published" | "archived";
+            title: string;
+          },
+          Name
+        >;
+        listBlogPosts: FunctionReference<
+          "query",
+          "internal",
+          {
+            handle?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?: "draft" | "published" | "archived";
+          },
+          any,
+          Name
+        >;
+        updateBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            content?: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle?: string;
+            metadata?: any;
+            postId: string;
+            publishedAt?: number;
+            status?: "draft" | "published" | "archived";
+            tagIds?: Array<string>;
+            title?: string;
+          },
+          any,
+          Name
+        >;
+      };
+      blogTags: {
+        createBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { handle: string; metadata?: any; name: string },
+          string,
+          Name
+        >;
+        deleteBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { tagId: string },
+          any,
+          Name
+        >;
+        getBlogTag: FunctionReference<
+          "query",
+          "internal",
+          { tagId: string },
+          null | {
+            _creationTime: number;
+            _id: string;
+            handle: string;
+            metadata?: any;
+            name: string;
+          },
+          Name
+        >;
+        listBlogTags: FunctionReference<
+          "query",
+          "internal",
+          {
+            handle?: string;
+            name?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
+          Name
+        >;
+        updateBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { handle?: string; metadata?: any; name?: string; tagId: string },
+          any,
+          Name
+        >;
+      };
       customers: {
         createCustomer: FunctionReference<
           "mutation",
@@ -36,6 +170,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
             userId: string;
           },
           string,
@@ -55,6 +190,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
             userId: string;
           },
           Name
@@ -89,6 +225,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
           },
           any,
           Name
@@ -392,6 +529,30 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        createBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            content: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle: string;
+            metadata?: any;
+            publishedAt?: number;
+            status: "draft" | "published" | "archived";
+            tagIds?: Array<string>;
+            title: string;
+          },
+          string,
+          Name
+        >;
+        createBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { handle: string; metadata?: any; name: string },
+          string,
+          Name
+        >;
         createCustomer: FunctionReference<
           "mutation",
           "internal",
@@ -403,6 +564,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
             userId: string;
           },
           string,
@@ -546,6 +708,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           string,
@@ -784,6 +948,20 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           string,
           Name
         >;
+        deleteBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          { postId: string },
+          any,
+          Name
+        >;
+        deleteBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { tagId: string },
+          any,
+          Name
+        >;
         deletePrice: FunctionReference<
           "mutation",
           "internal",
@@ -812,6 +990,37 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        getBlogPost: FunctionReference<
+          "query",
+          "internal",
+          { postId: string },
+          null | {
+            _creationTime: number;
+            _id: string;
+            content: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle: string;
+            metadata?: any;
+            publishedAt?: number;
+            status: "draft" | "published" | "archived";
+            title: string;
+          },
+          Name
+        >;
+        getBlogTag: FunctionReference<
+          "query",
+          "internal",
+          { tagId: string },
+          null | {
+            _creationTime: number;
+            _id: string;
+            handle: string;
+            metadata?: any;
+            name: string;
+          },
+          Name
+        >;
         getCustomer: FunctionReference<
           "query",
           "internal",
@@ -826,6 +1035,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
             userId: string;
           },
           Name
@@ -991,6 +1201,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           Name
@@ -1233,6 +1445,42 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           },
           Name
         >;
+        listBlogPosts: FunctionReference<
+          "query",
+          "internal",
+          {
+            handle?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            status?: "draft" | "published" | "archived";
+          },
+          any,
+          Name
+        >;
+        listBlogTags: FunctionReference<
+          "query",
+          "internal",
+          {
+            handle?: string;
+            name?: string;
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
+          Name
+        >;
         listCustomers: FunctionReference<
           "query",
           "internal",
@@ -1420,6 +1668,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           }>,
           Name
@@ -1685,6 +1935,31 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           }>,
           Name
         >;
+        updateBlogPost: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            content?: string;
+            coverImageUrl?: string;
+            excerpt?: string;
+            handle?: string;
+            metadata?: any;
+            postId: string;
+            publishedAt?: number;
+            status?: "draft" | "published" | "archived";
+            tagIds?: Array<string>;
+            title?: string;
+          },
+          any,
+          Name
+        >;
+        updateBlogTag: FunctionReference<
+          "mutation",
+          "internal",
+          { handle?: string; metadata?: any; name?: string; tagId: string },
+          any,
+          Name
+        >;
         updateCustomer: FunctionReference<
           "mutation",
           "internal",
@@ -1697,6 +1972,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             lastName?: string;
             metadata?: any;
             phone?: string;
+            stripeCustomerId?: string;
           },
           any,
           Name
@@ -1850,6 +2126,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           any,
@@ -2409,6 +2687,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           string,
@@ -2437,6 +2717,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           Name
@@ -2464,6 +2746,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           }>,
           Name
@@ -2489,6 +2773,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "failed"
               | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
               | "completed";
           },
           any,
@@ -3519,6 +3805,68 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           Name
         >;
       };
+      blog: {
+        getBlogPostByHandle: FunctionReference<
+          "query",
+          "internal",
+          { handle: string },
+          null | {
+            post: {
+              _creationTime: number;
+              _id: string;
+              content: string;
+              coverImageUrl?: string;
+              excerpt?: string;
+              handle: string;
+              metadata?: any;
+              publishedAt?: number;
+              status: "draft" | "published" | "archived";
+              title: string;
+            };
+            tags: Array<{
+              _creationTime: number;
+              _id: string;
+              handle: string;
+              metadata?: any;
+              name: string;
+            }>;
+          },
+          Name
+        >;
+        listBlogPosts: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            tagId?: string;
+          },
+          any,
+          Name
+        >;
+        listBlogTags: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
+          Name
+        >;
+      };
       carts: {
         addItem: FunctionReference<
           "mutation",
@@ -3612,6 +3960,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           string,
           Name
         >;
+        createCheckoutSession: FunctionReference<
+          "action",
+          "internal",
+          { cancelUrl: string; cartId: string; successUrl: string },
+          { sessionId: string; url: string },
+          Name
+        >;
         createOrderAddress: FunctionReference<
           "mutation",
           "internal",
@@ -3649,6 +4004,33 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "requires_action";
           },
           string,
+          Name
+        >;
+        getBlogPostByHandle: FunctionReference<
+          "query",
+          "internal",
+          { handle: string },
+          null | {
+            post: {
+              _creationTime: number;
+              _id: string;
+              content: string;
+              coverImageUrl?: string;
+              excerpt?: string;
+              handle: string;
+              metadata?: any;
+              publishedAt?: number;
+              status: "draft" | "published" | "archived";
+              title: string;
+            };
+            tags: Array<{
+              _creationTime: number;
+              _id: string;
+              handle: string;
+              metadata?: any;
+              name: string;
+            }>;
+          },
           Name
         >;
         getCart: FunctionReference<
@@ -3759,6 +4141,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "canceled"
                 | "failed"
                 | "partially_captured"
+                | "partially_refunded"
+                | "refunded"
                 | "completed";
               regionId?: string;
               salesChannelId?: string;
@@ -3784,6 +4168,66 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               shippingOptionId?: string;
             }>;
           },
+          Name
+        >;
+        handleStripePaymentIntent: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            amount: number;
+            currency: string;
+            paymentIntentId: string;
+            status:
+              | "succeeded"
+              | "canceled"
+              | "processing"
+              | "requires_action"
+              | "requires_confirmation"
+              | "requires_payment_method"
+              | "requires_capture"
+              | "payment_failed";
+          },
+          any,
+          Name
+        >;
+        handleStripeRefund: FunctionReference<
+          "mutation",
+          "internal",
+          { amountRefunded: number; currency: string; paymentIntentId: string },
+          any,
+          Name
+        >;
+        listBlogPosts: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            tagId?: string;
+          },
+          any,
+          Name
+        >;
+        listBlogTags: FunctionReference<
+          "query",
+          "internal",
+          {
+            paginationOpts: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          any,
           Name
         >;
         listOrdersByCustomer: FunctionReference<
@@ -3835,6 +4279,26 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        setOrderPaymentStatus: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            orderId: string;
+            paymentStatus:
+              | "not_paid"
+              | "awaiting"
+              | "authorized"
+              | "partially_authorized"
+              | "canceled"
+              | "failed"
+              | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
+              | "completed";
+          },
+          any,
+          Name
+        >;
         setOrderStatus: FunctionReference<
           "mutation",
           "internal",
@@ -3848,6 +4312,13 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               | "canceled"
               | "requires_action";
           },
+          any,
+          Name
+        >;
+        syncPaymentIntent: FunctionReference<
+          "action",
+          "internal",
+          { paymentIntentId: string },
           any,
           Name
         >;
@@ -3943,6 +4414,8 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
                 | "canceled"
                 | "failed"
                 | "partially_captured"
+                | "partially_refunded"
+                | "refunded"
                 | "completed";
               regionId?: string;
               salesChannelId?: string;
@@ -3987,6 +4460,26 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           any,
           Name
         >;
+        setOrderPaymentStatus: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            orderId: string;
+            paymentStatus:
+              | "not_paid"
+              | "awaiting"
+              | "authorized"
+              | "partially_authorized"
+              | "canceled"
+              | "failed"
+              | "partially_captured"
+              | "partially_refunded"
+              | "refunded"
+              | "completed";
+          },
+          any,
+          Name
+        >;
         setOrderStatus: FunctionReference<
           "mutation",
           "internal",
@@ -4020,6 +4513,51 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
             };
             priceListId?: string;
           },
+          any,
+          Name
+        >;
+      };
+      stripe: {
+        createCheckoutSession: FunctionReference<
+          "action",
+          "internal",
+          { cancelUrl: string; cartId: string; successUrl: string },
+          { sessionId: string; url: string },
+          Name
+        >;
+        syncPaymentIntent: FunctionReference<
+          "action",
+          "internal",
+          { paymentIntentId: string },
+          any,
+          Name
+        >;
+      };
+      stripeWebhooks: {
+        handleStripePaymentIntent: FunctionReference<
+          "mutation",
+          "internal",
+          {
+            amount: number;
+            currency: string;
+            paymentIntentId: string;
+            status:
+              | "succeeded"
+              | "canceled"
+              | "processing"
+              | "requires_action"
+              | "requires_confirmation"
+              | "requires_payment_method"
+              | "requires_capture"
+              | "payment_failed";
+          },
+          any,
+          Name
+        >;
+        handleStripeRefund: FunctionReference<
+          "mutation",
+          "internal",
+          { amountRefunded: number; currency: string; paymentIntentId: string },
           any,
           Name
         >;

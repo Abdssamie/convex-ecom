@@ -13,5 +13,11 @@ export {
   getOrder,
   listOrdersByCustomer,
   setOrderStatus,
+  setOrderPaymentStatus,
 } from "./orders";
+export { createCheckoutSession, syncPaymentIntent } from "./stripe";
+export {
+  handleStripePaymentIntent,
+  handleStripeRefund,
+} from "./stripeWebhooks";
 export { listBlogPosts, getBlogPostByHandle, listBlogTags } from "./blog";

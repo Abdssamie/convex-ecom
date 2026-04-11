@@ -25,6 +25,8 @@ const paymentCollectionStatus = v.union(
   v.literal("canceled"),
   v.literal("failed"),
   v.literal("partially_captured"),
+  v.literal("partially_refunded"),
+  v.literal("refunded"),
   v.literal("completed"),
 );
 
@@ -204,10 +206,12 @@ export default defineSchema({
     lastName: v.optional(v.string()),
     phone: v.optional(v.string()),
     hasAccount: v.boolean(),
+    stripeCustomerId: v.optional(v.string()),
     metadata: v.optional(v.any()),
   })
     .index("by_user", ["userId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_stripe_customer_id", ["stripeCustomerId"]),
 
   regions: defineTable({
     name: v.string(),

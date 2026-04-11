@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { action, mutation, query } from "./_generated/server";
 import { components } from "./_generated/api";
 import { exposeApi } from "@abdssamie/convex-ecommerce";
 import { v } from "convex/values";
@@ -53,6 +53,24 @@ export const addItem = mutation({
         cartId: args.cartId,
         variantId: args.variantId,
         quantity: args.quantity,
+      },
+    );
+  },
+});
+
+export const createCheckoutSession = action({
+  args: {
+    cartId: v.id("carts"),
+    successUrl: v.string(),
+    cancelUrl: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.runAction(
+      components.convexEcommerce.store.stripe.createCheckoutSession,
+      {
+        cartId: args.cartId,
+        successUrl: args.successUrl,
+        cancelUrl: args.cancelUrl,
       },
     );
   },

@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as admin_blogPosts from "../admin/blogPosts.js";
+import type * as admin_blogTags from "../admin/blogTags.js";
 import type * as admin_customers from "../admin/customers.js";
 import type * as admin_fulfillmentAddresses from "../admin/fulfillmentAddresses.js";
 import type * as admin_fulfillmentItems from "../admin/fulfillmentItems.js";
@@ -40,11 +42,14 @@ import type * as shared_guards from "../shared/guards.js";
 import type * as shared_utils from "../shared/utils.js";
 import type * as shared_validators from "../shared/validators.js";
 import type * as store_addresses from "../store/addresses.js";
+import type * as store_blog from "../store/blog.js";
 import type * as store_carts from "../store/carts.js";
 import type * as store_index from "../store/index.js";
 import type * as store_orders from "../store/orders.js";
 import type * as store_pricing from "../store/pricing.js";
 import type * as store_products from "../store/products.js";
+import type * as store_stripe from "../store/stripe.js";
+import type * as store_stripeWebhooks from "../store/stripeWebhooks.js";
 
 import type {
   ApiFromModules,
@@ -54,6 +59,8 @@ import type {
 import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
+  "admin/blogPosts": typeof admin_blogPosts;
+  "admin/blogTags": typeof admin_blogTags;
   "admin/customers": typeof admin_customers;
   "admin/fulfillmentAddresses": typeof admin_fulfillmentAddresses;
   "admin/fulfillmentItems": typeof admin_fulfillmentItems;
@@ -86,11 +93,14 @@ const fullApi: ApiFromModules<{
   "shared/utils": typeof shared_utils;
   "shared/validators": typeof shared_validators;
   "store/addresses": typeof store_addresses;
+  "store/blog": typeof store_blog;
   "store/carts": typeof store_carts;
   "store/index": typeof store_index;
   "store/orders": typeof store_orders;
   "store/pricing": typeof store_pricing;
   "store/products": typeof store_products;
+  "store/stripe": typeof store_stripe;
+  "store/stripeWebhooks": typeof store_stripeWebhooks;
 }> = anyApi as any;
 
 /**
@@ -119,4 +129,6 @@ export const internal: FilterApi<
   FunctionReference<any, "internal">
 > = anyApi as any;
 
-export const components = componentsGeneric() as unknown as {};
+export const components = componentsGeneric() as unknown as {
+  stripe: import("@convex-dev/stripe/_generated/component.js").ComponentApi<"stripe">;
+};
