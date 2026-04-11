@@ -6,13 +6,6 @@ describe("store blog", () => {
   test("list/get published posts with categories and tags", async () => {
     const t = initConvexTest();
 
-    const categoryId = await t.mutation(
-      api.admin.blogCategories.createBlogCategory,
-      {
-        name: "News",
-        handle: "news",
-      },
-    );
     const tagId = await t.mutation(api.admin.blogTags.createBlogTag, {
       name: "Launch",
       handle: "launch",
@@ -31,8 +24,7 @@ describe("store blog", () => {
       content: "Body",
       status: "published",
       publishedAt: 10,
-      categoryIds: [categoryId],
-      tagIds: [tagId],
+      tagIds: [tagId, tagId],
     });
 
     const list = await t.query(api.store.blog.listBlogPosts, {
@@ -45,7 +37,6 @@ describe("store blog", () => {
       handle: "published",
     });
     expect(byHandle?.post._id).toBe(postId);
-    expect(byHandle?.categories[0]?.handle).toBe("news");
     expect(byHandle?.tags[0]?.handle).toBe("launch");
 
     const missing = await t.query(api.store.blog.getBlogPostByHandle, {
@@ -57,13 +48,6 @@ describe("store blog", () => {
   test("list published posts by category and tag", async () => {
     const t = initConvexTest();
 
-    const categoryId = await t.mutation(
-      api.admin.blogCategories.createBlogCategory,
-      {
-        name: "Updates",
-        handle: "updates",
-      },
-    );
     const tagId = await t.mutation(api.admin.blogTags.createBlogTag, {
       name: "Ops",
       handle: "ops",
@@ -75,7 +59,6 @@ describe("store blog", () => {
       content: "Body",
       status: "published",
       publishedAt: 5,
-      categoryIds: [categoryId],
     });
     await t.mutation(api.admin.blogPosts.createBlogPost, {
       title: "Beta",
@@ -85,13 +68,6 @@ describe("store blog", () => {
       publishedAt: 8,
       tagIds: [tagId],
     });
-
-    const byCategory = await t.query(api.store.blog.listBlogPosts, {
-      paginationOpts: { numItems: 10, cursor: null },
-      categoryId,
-    });
-    expect(byCategory.page).toHaveLength(1);
-    expect(byCategory.page[0]?.handle).toBe("alpha");
 
     const byTag = await t.query(api.store.blog.listBlogPosts, {
       paginationOpts: { numItems: 10, cursor: null },

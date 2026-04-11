@@ -155,13 +155,6 @@ export {
   deleteRefundReason,
 } from "./refundReasons";
 export {
-  listBlogCategories,
-  getBlogCategory,
-  createBlogCategory,
-  updateBlogCategory,
-  deleteBlogCategory,
-} from "./blogCategories";
-export {
   listBlogTags,
   getBlogTag,
   createBlogTag,

@@ -528,15 +528,6 @@ export default defineSchema({
     metadata: v.optional(v.any()),
   }).index("by_payment_id", ["paymentId"]),
 
-  blogCategories: defineTable({
-    name: v.string(),
-    handle: v.string(),
-    description: v.optional(v.string()),
-    metadata: v.optional(v.any()),
-  })
-    .index("by_handle", ["handle"])
-    .index("by_name", ["name"]),
-
   blogTags: defineTable({
     name: v.string(),
     handle: v.string(),
@@ -558,14 +549,6 @@ export default defineSchema({
     .index("by_handle", ["handle"])
     .index("by_status", ["status"])
     .index("by_status_and_published_at", ["status", "publishedAt"]),
-
-  blogPostCategories: defineTable({
-    postId: v.id("blogPosts"),
-    categoryId: v.id("blogCategories"),
-  })
-    .index("by_post_id", ["postId"])
-    .index("by_category_id", ["categoryId"])
-    .index("by_post_id_and_category_id", ["postId", "categoryId"]),
 
   blogPostTags: defineTable({
     postId: v.id("blogPosts"),

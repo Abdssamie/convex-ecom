@@ -56,7 +56,6 @@ export const createBlogPost = mutation({
     status: blogPostStatusValidator,
     publishedAt: v.optional(v.number()),
     metadata: v.optional(v.any()),
-    categoryIds: v.optional(v.array(v.id("blogCategories"))),
     tagIds: v.optional(v.array(v.id("blogTags"))),
   },
   returns: v.id("blogPosts"),
@@ -64,6 +63,7 @@ export const createBlogPost = mutation({
     if (args.handle.trim().length === 0) {
       throw new Error("Handle must not be empty");
     }
+    const tagIds = args.tagIds ? [...new Set(args.tagIds)] : undefined;
     const existing = await ctx.db
       .query("blogPosts")
       .withIndex("by_handle", (q) => q.eq("handle", args.handle))
@@ -72,19 +72,8 @@ export const createBlogPost = mutation({
       throw new Error("Blog post handle already exists");
     }
 
-    if (args.categoryIds) {
-      for (const categoryId of args.categoryIds) {
-        await requireDoc(
-          ctx,
-          "blogCategories",
-          categoryId,
-          "Blog category not found",
-        );
-      }
-    }
-
-    if (args.tagIds) {
-      for (const tagId of args.tagIds) {
+    if (tagIds) {
+      for (const tagId of tagIds) {
         await requireDoc(ctx, "blogTags", tagId, "Blog tag not found");
       }
     }
@@ -100,19 +89,9 @@ export const createBlogPost = mutation({
       metadata: args.metadata,
     });
 
-    if (args.categoryIds?.length) {
+    if (tagIds?.length) {
       await Promise.all(
-        args.categoryIds.map((categoryId) =>
-          ctx.db.insert("blogPostCategories", { postId, categoryId }),
-        ),
-      );
-    }
-
-    if (args.tagIds?.length) {
-      await Promise.all(
-        args.tagIds.map((tagId) =>
-          ctx.db.insert("blogPostTags", { postId, tagId }),
-        ),
+        tagIds.map((tagId) => ctx.db.insert("blogPostTags", { postId, tagId })),
       );
     }
 
@@ -131,11 +110,11 @@ export const updateBlogPost = mutation({
     status: v.optional(blogPostStatusValidator),
     publishedAt: v.optional(v.number()),
     metadata: v.optional(v.any()),
-    categoryIds: v.optional(v.array(v.id("blogCategories"))),
     tagIds: v.optional(v.array(v.id("blogTags"))),
   },
   handler: async (ctx, args) => {
     await requireDoc(ctx, "blogPosts", args.postId, "Blog post not found");
+    const tagIds = args.tagIds ? [...new Set(args.tagIds)] : undefined;
     if (args.handle !== undefined) {
       if (args.handle.trim().length === 0) {
         throw new Error("Handle must not be empty");
@@ -149,19 +128,8 @@ export const updateBlogPost = mutation({
       }
     }
 
-    if (args.categoryIds) {
-      for (const categoryId of args.categoryIds) {
-        await requireDoc(
-          ctx,
-          "blogCategories",
-          categoryId,
-          "Blog category not found",
-        );
-      }
-    }
-
-    if (args.tagIds) {
-      for (const tagId of args.tagIds) {
+    if (tagIds) {
+      for (const tagId of tagIds) {
         await requireDoc(ctx, "blogTags", tagId, "Blog tag not found");
       }
     }
@@ -181,37 +149,15 @@ export const updateBlogPost = mutation({
       await ctx.db.patch(args.postId, patch);
     }
 
-    if (args.categoryIds) {
-      const existing = await ctx.db
-        .query("blogPostCategories")
-        .withIndex("by_post_id", (q) => q.eq("postId", args.postId))
-        .collect();
-      const existingIds = new Set(existing.map((row) => row.categoryId));
-      const nextIds = new Set(args.categoryIds);
-
-      const toAdd = args.categoryIds.filter((id) => !existingIds.has(id));
-      const toRemove = existing.filter((row) => !nextIds.has(row.categoryId));
-
-      await Promise.all([
-        ...toAdd.map((categoryId) =>
-          ctx.db.insert("blogPostCategories", {
-            postId: args.postId,
-            categoryId,
-          }),
-        ),
-        ...toRemove.map((row) => ctx.db.delete(row._id)),
-      ]);
-    }
-
-    if (args.tagIds) {
+    if (tagIds) {
       const existing = await ctx.db
         .query("blogPostTags")
         .withIndex("by_post_id", (q) => q.eq("postId", args.postId))
         .collect();
       const existingIds = new Set(existing.map((row) => row.tagId));
-      const nextIds = new Set(args.tagIds);
+      const nextIds = new Set(tagIds);
 
-      const toAdd = args.tagIds.filter((id) => !existingIds.has(id));
+      const toAdd = tagIds.filter((id) => !existingIds.has(id));
       const toRemove = existing.filter((row) => !nextIds.has(row.tagId));
 
       await Promise.all([
@@ -231,21 +177,12 @@ export const deleteBlogPost = mutation({
   handler: async (ctx, args) => {
     await requireDoc(ctx, "blogPosts", args.postId, "Blog post not found");
 
-    const [categoryLinks, tagLinks] = await Promise.all([
-      ctx.db
-        .query("blogPostCategories")
-        .withIndex("by_post_id", (q) => q.eq("postId", args.postId))
-        .collect(),
-      ctx.db
-        .query("blogPostTags")
-        .withIndex("by_post_id", (q) => q.eq("postId", args.postId))
-        .collect(),
-    ]);
+    const tagLinks = await ctx.db
+      .query("blogPostTags")
+      .withIndex("by_post_id", (q) => q.eq("postId", args.postId))
+      .collect();
 
-    await Promise.all([
-      ...categoryLinks.map((row) => ctx.db.delete(row._id)),
-      ...tagLinks.map((row) => ctx.db.delete(row._id)),
-    ]);
+    await Promise.all(tagLinks.map((row) => ctx.db.delete(row._id)));
 
     await ctx.db.delete(args.postId);
   },
