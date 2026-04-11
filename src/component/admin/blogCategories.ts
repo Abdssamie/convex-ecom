@@ -54,6 +54,9 @@ export const createBlogCategory = mutation({
   },
   returns: v.id("blogCategories"),
   handler: async (ctx, args) => {
+    if (args.handle.trim().length === 0) {
+      throw new Error("Handle must not be empty");
+    }
     const existing = await ctx.db
       .query("blogCategories")
       .withIndex("by_handle", (q) => q.eq("handle", args.handle))
@@ -85,7 +88,10 @@ export const updateBlogCategory = mutation({
       args.categoryId,
       "Category not found",
     );
-    if (args.handle) {
+    if (args.handle !== undefined) {
+      if (args.handle.trim().length === 0) {
+        throw new Error("Handle must not be empty");
+      }
       const existing = await ctx.db
         .query("blogCategories")
         .withIndex("by_handle", (q) => q.eq("handle", args.handle!))

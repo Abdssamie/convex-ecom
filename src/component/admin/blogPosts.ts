@@ -61,6 +61,9 @@ export const createBlogPost = mutation({
   },
   returns: v.id("blogPosts"),
   handler: async (ctx, args) => {
+    if (args.handle.trim().length === 0) {
+      throw new Error("Handle must not be empty");
+    }
     const existing = await ctx.db
       .query("blogPosts")
       .withIndex("by_handle", (q) => q.eq("handle", args.handle))
@@ -133,7 +136,10 @@ export const updateBlogPost = mutation({
   },
   handler: async (ctx, args) => {
     await requireDoc(ctx, "blogPosts", args.postId, "Blog post not found");
-    if (args.handle) {
+    if (args.handle !== undefined) {
+      if (args.handle.trim().length === 0) {
+        throw new Error("Handle must not be empty");
+      }
       const existing = await ctx.db
         .query("blogPosts")
         .withIndex("by_handle", (q) => q.eq("handle", args.handle!))

@@ -140,6 +140,34 @@ describe("admin blog", () => {
         status: "draft",
       });
     }).rejects.toThrowError("Blog post handle already exists");
+
+    await expect(async () => {
+      await t.mutation(api.admin.blogCategories.createBlogCategory, {
+        name: "Empty",
+        handle: "   ",
+      });
+    }).rejects.toThrowError("Handle must not be empty");
+
+    await expect(async () => {
+      await t.mutation(api.admin.blogTags.createBlogTag, {
+        name: "Empty",
+        handle: "",
+      });
+    }).rejects.toThrowError("Handle must not be empty");
+
+    const postId = await t.mutation(api.admin.blogPosts.createBlogPost, {
+      title: "Handle Update",
+      handle: "handle-update",
+      content: "Body",
+      status: "draft",
+    });
+
+    await expect(async () => {
+      await t.mutation(api.admin.blogPosts.updateBlogPost, {
+        postId,
+        handle: " ",
+      });
+    }).rejects.toThrowError("Handle must not be empty");
   });
 
   test("blog update with category/tag swap", async () => {
