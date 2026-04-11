@@ -557,8 +557,15 @@ export default defineSchema({
   blogPostTags: defineTable({
     postId: v.id("blogPosts"),
     tagId: v.id("blogTags"),
+    isPublished: v.boolean(),
+    publishedAt: v.number(),
   })
     .index("by_post_id", ["postId"])
     .index("by_tag_id", ["tagId"])
-    .index("by_post_id_and_tag_id", ["postId", "tagId"]),
+    .index("by_post_id_and_tag_id", ["postId", "tagId"])
+    .index("by_tag_id_and_is_published_and_published_at", [
+      "tagId",
+      "isPublished",
+      "publishedAt",
+    ]),
 });

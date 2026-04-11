@@ -45,7 +45,7 @@ describe("store blog", () => {
     expect(missing).toBeNull();
   });
 
-  test("list published posts by category and tag", async () => {
+  test("list published posts by tag paginated by publishedAt", async () => {
     const t = initConvexTest();
 
     const tagId = await t.mutation(api.admin.blogTags.createBlogTag, {
@@ -68,12 +68,37 @@ describe("store blog", () => {
       publishedAt: 8,
       tagIds: [tagId],
     });
+    await t.mutation(api.admin.blogPosts.createBlogPost, {
+      title: "Gamma",
+      handle: "gamma",
+      content: "Body",
+      status: "published",
+      publishedAt: 12,
+      tagIds: [tagId],
+    });
+    await t.mutation(api.admin.blogPosts.createBlogPost, {
+      title: "Draft tagged",
+      handle: "draft-tagged",
+      content: "Body",
+      status: "draft",
+      tagIds: [tagId],
+    });
 
-    const byTag = await t.query(api.store.blog.listBlogPosts, {
-      paginationOpts: { numItems: 10, cursor: null },
+    const firstPage = await t.query(api.store.blog.listBlogPosts, {
+      paginationOpts: { numItems: 1, cursor: null },
       tagId,
     });
-    expect(byTag.page).toHaveLength(1);
-    expect(byTag.page[0]?.handle).toBe("beta");
+    expect(firstPage.page).toHaveLength(1);
+    expect(firstPage.page[0]?.handle).toBe("gamma");
+
+    const secondPage = await t.query(api.store.blog.listBlogPosts, {
+      paginationOpts: {
+        numItems: 1,
+        cursor: firstPage.continueCursor,
+      },
+      tagId,
+    });
+    expect(secondPage.page).toHaveLength(1);
+    expect(secondPage.page[0]?.handle).toBe("beta");
   });
 });
