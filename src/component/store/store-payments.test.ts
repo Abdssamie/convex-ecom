@@ -102,6 +102,32 @@ describe("store payments webhooks", () => {
     expect(order?.order.paymentStatus).toBe("failed");
   });
 
+  test("webhook falls back to paymentId when paymentIntentId is missing", async () => {
+    const t = initConvexTest();
+    const cartId = await createCartWithOneItem(t);
+
+    const paymentId = await t.mutation(api.admin.payments.createPayment, {
+      cartId,
+      providerId: "stripe",
+      status: "awaiting",
+      amount: 1500,
+      currencyCode: "usd",
+    });
+
+    await t.mutation(api.store.stripeWebhooks.handleStripePaymentIntent, {
+      paymentIntentId: "pi_fallback_1",
+      paymentId,
+      status: "succeeded",
+      amount: 1500,
+      currency: "usd",
+    });
+
+    const payment = await t.query(api.admin.payments.getPayment, { paymentId });
+    expect(payment?.paymentIntentId).toBe("pi_fallback_1");
+    expect(payment?.status).toBe("completed");
+    expect(payment?.orderId).toBeDefined();
+  });
+
   test("refund webhook marks partially_refunded then refunded", async () => {
     const t = initConvexTest();
     const cartId = await createCartWithOneItem(t);

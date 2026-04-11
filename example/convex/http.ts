@@ -13,12 +13,14 @@ registerRoutes(http, components.stripe, {
         id: string;
         amount: number;
         currency: string;
+        metadata?: { paymentId?: string };
       };
       await ctx.runMutation(
         components.convexEcommerce.store.stripeWebhooks
           .handleStripePaymentIntent,
         {
           paymentIntentId: intent.id,
+          paymentId: intent.metadata?.paymentId,
           status: "succeeded",
           amount: intent.amount,
           currency: intent.currency,
@@ -30,12 +32,14 @@ registerRoutes(http, components.stripe, {
         id: string;
         amount: number;
         currency: string;
+        metadata?: { paymentId?: string };
       };
       await ctx.runMutation(
         components.convexEcommerce.store.stripeWebhooks
           .handleStripePaymentIntent,
         {
           paymentIntentId: intent.id,
+          paymentId: intent.metadata?.paymentId,
           status: "payment_failed",
           amount: intent.amount,
           currency: intent.currency,
@@ -47,12 +51,14 @@ registerRoutes(http, components.stripe, {
         id: string;
         amount: number;
         currency: string;
+        metadata?: { paymentId?: string };
       };
       await ctx.runMutation(
         components.convexEcommerce.store.stripeWebhooks
           .handleStripePaymentIntent,
         {
           paymentIntentId: intent.id,
+          paymentId: intent.metadata?.paymentId,
           status: "canceled",
           amount: intent.amount,
           currency: intent.currency,
@@ -64,6 +70,7 @@ registerRoutes(http, components.stripe, {
         amount_refunded: number;
         currency: string;
         payment_intent?: string | null;
+        metadata?: { paymentId?: string };
       };
       if (!charge.payment_intent) {
         return;
@@ -72,6 +79,7 @@ registerRoutes(http, components.stripe, {
         components.convexEcommerce.store.stripeWebhooks.handleStripeRefund,
         {
           paymentIntentId: charge.payment_intent,
+          paymentId: charge.metadata?.paymentId,
           amountRefunded: charge.amount_refunded,
           currency: charge.currency,
         },

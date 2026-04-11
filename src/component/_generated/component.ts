@@ -4176,6 +4176,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             amount: number;
             currency: string;
+            paymentId?: string;
             paymentIntentId: string;
             status:
               | "succeeded"
@@ -4193,7 +4194,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         handleStripeRefund: FunctionReference<
           "mutation",
           "internal",
-          { amountRefunded: number; currency: string; paymentIntentId: string },
+          {
+            amountRefunded: number;
+            currency: string;
+            paymentId?: string;
+            paymentIntentId: string;
+          },
           any,
           Name
         >;
@@ -4540,6 +4546,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           {
             amount: number;
             currency: string;
+            paymentId?: string;
             paymentIntentId: string;
             status:
               | "succeeded"
@@ -4557,7 +4564,12 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         handleStripeRefund: FunctionReference<
           "mutation",
           "internal",
-          { amountRefunded: number; currency: string; paymentIntentId: string },
+          {
+            amountRefunded: number;
+            currency: string;
+            paymentId?: string;
+            paymentIntentId: string;
+          },
           any,
           Name
         >;
