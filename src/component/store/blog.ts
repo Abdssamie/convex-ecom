@@ -22,34 +22,25 @@ export const listBlogPosts = query({
     if (args.tagId !== undefined) {
       const links = await ctx.db
         .query("blogPostTags")
-        .withIndex("by_tag_id", (q) => q.eq("tagId", args.tagId!))
-        .collect();
-      const postIds = [...new Set(links.map((link) => link.postId))];
+        .withIndex("by_tag_id_and_is_published_and_published_at", (q) =>
+          q.eq("tagId", args.tagId!).eq("isPublished", true),
+        )
+        .order("desc")
+        .paginate(args.paginationOpts);
+
       const posts = await Promise.all(
-        postIds.map((postId) => ctx.db.get("blogPosts", postId)),
+        links.page.map((link) => ctx.db.get("blogPosts", link.postId)),
       );
-      const published = posts
-        .filter(
+
+      return {
+        ...links,
+        page: posts.filter(
           (
             post,
           ): post is NonNullable<(typeof posts)[number]> & {
             status: "published";
           } => post !== null && post.status === "published",
-        )
-        .sort((a, b) => (b.publishedAt ?? 0) - (a.publishedAt ?? 0));
-      const start = args.paginationOpts.cursor
-        ? Math.max(
-            0,
-            published.findIndex(
-              (post) => post._id === args.paginationOpts.cursor,
-            ) + 1,
-          )
-        : 0;
-      const page = published.slice(start, start + args.paginationOpts.numItems);
-      return {
-        page,
-        isDone: start + args.paginationOpts.numItems >= published.length,
-        continueCursor: page.length ? page[page.length - 1]._id : null,
+        ),
       };
     }
 

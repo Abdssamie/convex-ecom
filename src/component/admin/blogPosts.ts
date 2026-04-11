@@ -1,15 +1,51 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
+import type { MutationCtx } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 import { blogPostStatusValidator } from "../shared/validators";
+import type { Id } from "../_generated/dataModel";
 
 const blogPostValidator = schema.tables.blogPosts.validator.extend({
   _id: v.id("blogPosts"),
   _creationTime: v.number(),
 });
+
+function getPublishedState(
+  status: "draft" | "published" | "archived",
+  publishedAt: number | undefined,
+) {
+  if (status !== "published") {
+    return { isPublished: false, publishedAt: 0 };
+  }
+  return { isPublished: true, publishedAt: publishedAt ?? 0 };
+}
+
+async function syncPostTagPublicationState(
+  ctx: MutationCtx,
+  postId: Id<"blogPosts">,
+  status: "draft" | "published" | "archived",
+  publishedAt: number | undefined,
+) {
+  const links = await ctx.db
+    .query("blogPostTags")
+    .withIndex("by_post_id", (q) => q.eq("postId", postId))
+    .collect();
+  if (links.length === 0) {
+    return;
+  }
+  const next = getPublishedState(status, publishedAt);
+  await Promise.all(
+    links.map((link) =>
+      ctx.db.patch(link._id, {
+        isPublished: next.isPublished,
+        publishedAt: next.publishedAt,
+      }),
+    ),
+  );
+}
 
 export const listBlogPosts = query({
   args: {
@@ -90,8 +126,16 @@ export const createBlogPost = mutation({
     });
 
     if (tagIds?.length) {
+      const publication = getPublishedState(args.status, args.publishedAt);
       await Promise.all(
-        tagIds.map((tagId) => ctx.db.insert("blogPostTags", { postId, tagId })),
+        tagIds.map((tagId) =>
+          ctx.db.insert("blogPostTags", {
+            postId,
+            tagId,
+            isPublished: publication.isPublished,
+            publishedAt: publication.publishedAt,
+          }),
+        ),
       );
     }
 
@@ -113,7 +157,12 @@ export const updateBlogPost = mutation({
     tagIds: v.optional(v.array(v.id("blogTags"))),
   },
   handler: async (ctx, args) => {
-    await requireDoc(ctx, "blogPosts", args.postId, "Blog post not found");
+    const existingPost = await requireDoc(
+      ctx,
+      "blogPosts",
+      args.postId,
+      "Blog post not found",
+    );
     const tagIds = args.tagIds ? [...new Set(args.tagIds)] : undefined;
     if (args.handle !== undefined) {
       if (args.handle.trim().length === 0) {
@@ -159,14 +208,30 @@ export const updateBlogPost = mutation({
 
       const toAdd = tagIds.filter((id) => !existingIds.has(id));
       const toRemove = existing.filter((row) => !nextIds.has(row.tagId));
+      const nextPublication = getPublishedState(
+        args.status ?? existingPost.status,
+        args.publishedAt ?? existingPost.publishedAt,
+      );
 
       await Promise.all([
         ...toAdd.map((tagId) =>
-          ctx.db.insert("blogPostTags", { postId: args.postId, tagId }),
+          ctx.db.insert("blogPostTags", {
+            postId: args.postId,
+            tagId,
+            isPublished: nextPublication.isPublished,
+            publishedAt: nextPublication.publishedAt,
+          }),
         ),
         ...toRemove.map((row) => ctx.db.delete(row._id)),
       ]);
     }
+
+    await syncPostTagPublicationState(
+      ctx,
+      args.postId,
+      args.status ?? existingPost.status,
+      args.publishedAt ?? existingPost.publishedAt,
+    );
   },
 });
 
