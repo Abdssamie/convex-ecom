@@ -4,6 +4,7 @@ import type { ActionCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
 import { api, components } from "../_generated/api";
 import { StripeSubscriptions } from "@convex-dev/stripe";
+import { mapStripeStatus } from "./stripeStatus";
 
 const stripeClient = new StripeSubscriptions(components.stripe, {});
 
@@ -177,24 +178,6 @@ export const syncPaymentIntent = action({
     }
   },
 });
-
-function mapStripeStatus(status: string) {
-  switch (status) {
-    case "succeeded":
-      return "completed" as const;
-    case "canceled":
-      return "canceled" as const;
-    case "processing":
-    case "requires_action":
-    case "requires_confirmation":
-    case "requires_payment_method":
-      return "awaiting" as const;
-    case "requires_capture":
-      return "authorized" as const;
-    default:
-      return "awaiting" as const;
-  }
-}
 
 function getStripePriceId(metadata: unknown): string | null {
   if (!metadata || typeof metadata !== "object") {

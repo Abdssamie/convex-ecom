@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
 import { api } from "../_generated/api";
+import { mapStripeStatus } from "./stripeStatus";
 
 const stripePaymentStatus = v.union(
   v.literal("succeeded"),
@@ -102,26 +103,6 @@ export const handleStripeRefund = mutation({
     }
   },
 });
-
-function mapStripeStatus(status: string) {
-  switch (status) {
-    case "succeeded":
-      return "completed" as const;
-    case "canceled":
-      return "canceled" as const;
-    case "payment_failed":
-      return "failed" as const;
-    case "processing":
-    case "requires_action":
-    case "requires_confirmation":
-    case "requires_payment_method":
-      return "awaiting" as const;
-    case "requires_capture":
-      return "authorized" as const;
-    default:
-      return "awaiting" as const;
-  }
-}
 
 async function resolveStripePayment(
   ctx: MutationCtx,
