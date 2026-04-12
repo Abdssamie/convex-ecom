@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "../_generated/server";
+import { internalMutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
 import { api } from "../_generated/api";
 import { mapStripeStatus } from "./stripeStatus";
@@ -15,7 +15,7 @@ const stripePaymentStatus = v.union(
   v.literal("payment_failed"),
 );
 
-export const handleStripePaymentIntent = mutation({
+export const handleStripePaymentIntent = internalMutation({
   args: {
     paymentIntentId: v.string(),
     paymentId: v.optional(v.string()),
@@ -41,10 +41,37 @@ export const handleStripePaymentIntent = mutation({
     }
 
     const status = mapStripeStatus(args.status);
+    const cart = await ctx.db.get(payment.cartId);
+    if (!cart) {
+      return;
+    }
+
+    const order = payment.orderId ? await ctx.db.get(payment.orderId) : null;
+    const eventCurrency = args.currency.toLowerCase();
+    const paymentCurrency = payment.currencyCode.toLowerCase();
+    const cartCurrency = cart.currencyCode.toLowerCase();
+    const orderCurrency = order?.currencyCode?.toLowerCase();
+
+    const amountMismatch =
+      args.amount !== payment.amount ||
+      args.amount !== cart.total ||
+      (order ? args.amount !== order.total : false);
+    const currencyMismatch =
+      eventCurrency !== paymentCurrency ||
+      eventCurrency !== cartCurrency ||
+      (orderCurrency ? eventCurrency !== orderCurrency : false);
+
+    if (amountMismatch || currencyMismatch) {
+      await ctx.db.patch(payment._id, { status: "failed" });
+      if (payment.orderId) {
+        await ctx.db.patch(payment.orderId, { paymentStatus: "failed" });
+      }
+      return;
+    }
+
     await ctx.db.patch(payment._id, {
       status,
-      amount: args.amount,
-      currencyCode: args.currency,
+      currencyCode: eventCurrency,
     });
 
     let orderId = payment.orderId;
@@ -69,7 +96,7 @@ export const handleStripePaymentIntent = mutation({
   },
 });
 
-export const handleStripeRefund = mutation({
+export const handleStripeRefund = internalMutation({
   args: {
     paymentIntentId: v.string(),
     paymentId: v.optional(v.string()),
@@ -86,7 +113,16 @@ export const handleStripeRefund = mutation({
       return;
     }
 
+    const eventCurrency = args.currency.toLowerCase();
+    if (eventCurrency !== payment.currencyCode.toLowerCase()) {
+      return;
+    }
+
     if (args.amountRefunded <= 0) {
+      return;
+    }
+
+    if (args.amountRefunded > payment.amount) {
       return;
     }
 
@@ -95,7 +131,7 @@ export const handleStripeRefund = mutation({
 
     await ctx.db.patch(payment._id, {
       status,
-      currencyCode: args.currency,
+      currencyCode: eventCurrency,
     });
 
     if (payment.orderId) {

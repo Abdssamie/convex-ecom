@@ -2,9 +2,8 @@ import { v } from "convex/values";
 import { action } from "../_generated/server";
 import type { ActionCtx } from "../_generated/server";
 import type { Doc, Id } from "../_generated/dataModel";
-import { api, components } from "../_generated/api";
+import { api, components, internal } from "../_generated/api";
 import { StripeSubscriptions } from "@convex-dev/stripe";
-import { mapStripeStatus } from "./stripeStatus";
 
 const stripeClient = new StripeSubscriptions(components.stripe, {});
 
@@ -154,28 +153,15 @@ export const syncPaymentIntent = action({
       return;
     }
 
-    const payments = await ctx.runQuery(api.admin.payments.listPayments, {
-      paymentIntentId: args.paymentIntentId,
-      limit: 1,
-    });
-    if (!payments[0]) {
-      return;
-    }
-
-    const status = mapStripeStatus(paymentIntent.status);
-    await ctx.runMutation(api.admin.payments.updatePayment, {
-      paymentId: payments[0]._id,
-      status,
-      amount: paymentIntent.amount,
-      currencyCode: paymentIntent.currency,
-    });
-
-    if (payments[0].orderId) {
-      await ctx.runMutation(api.store.orders.setOrderPaymentStatus, {
-        orderId: payments[0].orderId,
-        paymentStatus: status,
-      });
-    }
+    await ctx.runMutation(
+      internal.store.stripeWebhooks.handleStripePaymentIntent,
+      {
+        paymentIntentId: paymentIntent.stripePaymentIntentId,
+        status: toStripeWebhookStatus(paymentIntent.status),
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+      },
+    );
   },
 });
 
@@ -197,4 +183,20 @@ function getStripePriceId(metadata: unknown): string | null {
     return nested;
   }
   return null;
+}
+
+function toStripeWebhookStatus(status: string) {
+  switch (status) {
+    case "succeeded":
+    case "canceled":
+    case "processing":
+    case "requires_action":
+    case "requires_confirmation":
+    case "requires_payment_method":
+    case "requires_capture":
+    case "payment_failed":
+      return status;
+    default:
+      return "processing";
+  }
 }
