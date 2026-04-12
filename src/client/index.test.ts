@@ -21,16 +21,34 @@ const testApi = (
 )["index.test"];
 
 describe("client tests", () => {
-  test("should be able to use client", async () => {
-    const t = initConvexTest().withIdentity({
-      tokenIdentifier: "https://example.com|user1",
-    });
+  test("getCart rejects unauthenticated access", async () => {
+    const t = initConvexTest();
     const cartId = await t.mutation(testApi.createCart, {
       currencyCode: "usd",
     });
-    const cart = await t.query(testApi.getCart, {
-      cartId: cartId as Id<"carts">,
+    await expect(async () => {
+      await t.query(testApi.getCart, {
+        cartId: cartId as Id<"carts">,
+      });
+    }).rejects.toThrowError("Unauthorized");
+  });
+
+  test("authenticated users can read carts", async () => {
+    const base = initConvexTest();
+    const cartId = await base.mutation(testApi.createCart, {
+      currencyCode: "usd",
     });
+    const auth = base.withIdentity({
+      tokenIdentifier: "https://example.com|user1",
+      subject: "user1",
+      issuer: "https://example.com",
+    });
+    const cart = await auth.query(
+      components.convexEcommerce.store.carts.getCart,
+      {
+        cartId: cartId as Id<"carts">,
+      },
+    );
     expect(cart?.cart.currencyCode).toBe("usd");
   });
 });

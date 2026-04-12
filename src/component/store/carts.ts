@@ -1,5 +1,10 @@
 import { v } from "convex/values";
-import { query, mutation, type MutationCtx } from "../_generated/server";
+import {
+  query,
+  mutation,
+  internalQuery,
+  type MutationCtx,
+} from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
 import { requireDoc, requireIdentity } from "../shared/guards";
@@ -16,6 +21,31 @@ const cartItemValidator = schema.tables.cartItems.validator.extend({
 });
 
 export const getCart = query({
+  args: {
+    cartId: v.id("carts"),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      cart: cartValidator,
+      items: v.array(cartItemValidator),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireIdentity(ctx);
+    const cart = await ctx.db.get("carts", args.cartId);
+    if (!cart) {
+      return null;
+    }
+    const items = await ctx.db
+      .query("cartItems")
+      .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
+      .collect();
+    return { cart, items };
+  },
+});
+
+export const getCartInternal = internalQuery({
   args: {
     cartId: v.id("carts"),
   },
