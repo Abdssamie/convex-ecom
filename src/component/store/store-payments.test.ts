@@ -37,25 +37,40 @@ async function createCartWithOneItem(t: ReturnType<typeof initConvexTest>) {
   return cartId;
 }
 
+async function getCartTotals(
+  t: ReturnType<typeof initConvexTest>,
+  cartId: Awaited<ReturnType<typeof createCartWithOneItem>>,
+) {
+  const cart = await t.query(api.store.carts.getCart, { cartId });
+  if (!cart) {
+    throw new Error("Cart not found");
+  }
+  return {
+    total: cart.cart.total,
+    currencyCode: cart.cart.currencyCode,
+  };
+}
+
 describe("store payments webhooks", () => {
   test("succeeded payment creates order and marks payment completed", async () => {
     const t = initConvexTest();
     const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
 
     const paymentId = await t.mutation(api.admin.payments.createPayment, {
       cartId,
       providerId: "stripe",
       status: "awaiting",
-      amount: 1500,
-      currencyCode: "usd",
+      amount: total,
+      currencyCode,
       paymentIntentId: "pi_success_1",
     });
 
-    await t.mutation(api.store.stripeWebhooks.handleStripePaymentIntent, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
       paymentIntentId: "pi_success_1",
       status: "succeeded",
-      amount: 1500,
-      currency: "usd",
+      amount: total,
+      currency: currencyCode,
     });
 
     const payment = await t.query(api.admin.payments.getPayment, { paymentId });
@@ -74,6 +89,7 @@ describe("store payments webhooks", () => {
   test("failed payment updates linked order payment status", async () => {
     const t = initConvexTest();
     const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
     const orderId = await t.mutation(api.store.orders.createOrderFromCart, {
       cartId,
     });
@@ -83,16 +99,16 @@ describe("store payments webhooks", () => {
       orderId,
       providerId: "stripe",
       status: "awaiting",
-      amount: 1500,
-      currencyCode: "usd",
+      amount: total,
+      currencyCode,
       paymentIntentId: "pi_failed_1",
     });
 
-    await t.mutation(api.store.stripeWebhooks.handleStripePaymentIntent, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
       paymentIntentId: "pi_failed_1",
       status: "payment_failed",
-      amount: 1500,
-      currency: "usd",
+      amount: total,
+      currency: currencyCode,
     });
 
     const payment = await t.query(api.admin.payments.getPayment, { paymentId });
@@ -105,21 +121,22 @@ describe("store payments webhooks", () => {
   test("webhook falls back to paymentId when paymentIntentId is missing", async () => {
     const t = initConvexTest();
     const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
 
     const paymentId = await t.mutation(api.admin.payments.createPayment, {
       cartId,
       providerId: "stripe",
       status: "awaiting",
-      amount: 1500,
-      currencyCode: "usd",
+      amount: total,
+      currencyCode,
     });
 
-    await t.mutation(api.store.stripeWebhooks.handleStripePaymentIntent, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
       paymentIntentId: "pi_fallback_1",
       paymentId,
       status: "succeeded",
-      amount: 1500,
-      currency: "usd",
+      amount: total,
+      currency: currencyCode,
     });
 
     const payment = await t.query(api.admin.payments.getPayment, { paymentId });
@@ -128,9 +145,61 @@ describe("store payments webhooks", () => {
     expect(payment?.orderId).toBeDefined();
   });
 
+  test("amount mismatch does not complete payment or create order", async () => {
+    const t = initConvexTest();
+    const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
+
+    const paymentId = await t.mutation(api.admin.payments.createPayment, {
+      cartId,
+      providerId: "stripe",
+      status: "awaiting",
+      amount: total,
+      currencyCode,
+      paymentIntentId: "pi_mismatch_1",
+    });
+
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
+      paymentIntentId: "pi_mismatch_1",
+      status: "succeeded",
+      amount: total - 1,
+      currency: currencyCode,
+    });
+
+    const payment = await t.query(api.admin.payments.getPayment, { paymentId });
+    expect(payment?.status).toBe("failed");
+    expect(payment?.orderId).toBeUndefined();
+  });
+
+  test("currency mismatch does not complete payment", async () => {
+    const t = initConvexTest();
+    const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
+
+    const paymentId = await t.mutation(api.admin.payments.createPayment, {
+      cartId,
+      providerId: "stripe",
+      status: "awaiting",
+      amount: total,
+      currencyCode,
+      paymentIntentId: "pi_currency_mismatch_1",
+    });
+
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
+      paymentIntentId: "pi_currency_mismatch_1",
+      status: "succeeded",
+      amount: total,
+      currency: "eur",
+    });
+
+    const payment = await t.query(api.admin.payments.getPayment, { paymentId });
+    expect(payment?.status).toBe("failed");
+  });
+
   test("refund webhook marks partially_refunded then refunded", async () => {
     const t = initConvexTest();
     const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
     const orderId = await t.mutation(api.store.orders.createOrderFromCart, {
       cartId,
     });
@@ -140,15 +209,15 @@ describe("store payments webhooks", () => {
       orderId,
       providerId: "stripe",
       status: "completed",
-      amount: 1500,
-      currencyCode: "usd",
+      amount: total,
+      currencyCode,
       paymentIntentId: "pi_refund_1",
     });
 
-    await t.mutation(api.store.stripeWebhooks.handleStripeRefund, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripeRefund, {
       paymentIntentId: "pi_refund_1",
-      amountRefunded: 500,
-      currency: "usd",
+      amountRefunded: Math.floor(total / 2),
+      currency: currencyCode,
     });
 
     let payment = await t.query(api.admin.payments.getPayment, { paymentId });
@@ -156,25 +225,81 @@ describe("store payments webhooks", () => {
     expect(payment?.status).toBe("partially_refunded");
     expect(order?.order.paymentStatus).toBe("partially_refunded");
 
-    await t.mutation(api.store.stripeWebhooks.handleStripePaymentIntent, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripePaymentIntent, {
       paymentIntentId: "pi_refund_1",
       status: "succeeded",
-      amount: 1500,
-      currency: "usd",
+      amount: total,
+      currency: currencyCode,
     });
 
     payment = await t.query(api.admin.payments.getPayment, { paymentId });
     expect(payment?.status).toBe("partially_refunded");
 
-    await t.mutation(api.store.stripeWebhooks.handleStripeRefund, {
+    await t.mutation(internal.store.stripeWebhooks.handleStripeRefund, {
       paymentIntentId: "pi_refund_1",
-      amountRefunded: 1500,
-      currency: "usd",
+      amountRefunded: total,
+      currency: currencyCode,
     });
 
     payment = await t.query(api.admin.payments.getPayment, { paymentId });
     order = await t.query(api.store.orders.getOrder, { orderId });
     expect(payment?.status).toBe("refunded");
     expect(order?.order.paymentStatus).toBe("refunded");
+  });
+
+  test("refund rejects currency mismatch", async () => {
+    const t = initConvexTest();
+    const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
+    const orderId = await t.mutation(api.store.orders.createOrderFromCart, {
+      cartId,
+    });
+
+    const paymentId = await t.mutation(api.admin.payments.createPayment, {
+      cartId,
+      orderId,
+      providerId: "stripe",
+      status: "completed",
+      amount: total,
+      currencyCode,
+      paymentIntentId: "pi_refund_currency_1",
+    });
+
+    await t.mutation(internal.store.stripeWebhooks.handleStripeRefund, {
+      paymentIntentId: "pi_refund_currency_1",
+      amountRefunded: total,
+      currency: "eur",
+    });
+
+    const payment = await t.query(api.admin.payments.getPayment, { paymentId });
+    expect(payment?.status).toBe("completed");
+  });
+
+  test("refund rejects amount above payment", async () => {
+    const t = initConvexTest();
+    const cartId = await createCartWithOneItem(t);
+    const { total, currencyCode } = await getCartTotals(t, cartId);
+    const orderId = await t.mutation(api.store.orders.createOrderFromCart, {
+      cartId,
+    });
+
+    const paymentId = await t.mutation(api.admin.payments.createPayment, {
+      cartId,
+      orderId,
+      providerId: "stripe",
+      status: "completed",
+      amount: total,
+      currencyCode,
+      paymentIntentId: "pi_refund_over_1",
+    });
+
+    await t.mutation(internal.store.stripeWebhooks.handleStripeRefund, {
+      paymentIntentId: "pi_refund_over_1",
+      amountRefunded: total + 1,
+      currency: currencyCode,
+    });
+
+    const payment = await t.query(api.admin.payments.getPayment, { paymentId });
+    expect(payment?.status).toBe("completed");
   });
 });
