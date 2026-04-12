@@ -1,8 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query, internalMutation } from "../_generated/server";
+import type { MutationCtx } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireDoc, requireIdentity } from "../shared/guards";
 import {
   orderStatusValidator,
   paymentStatusValidator,
@@ -36,106 +38,19 @@ export const createOrderFromCart = mutation({
   },
   returns: v.id("orders"),
   handler: async (ctx, args) => {
-    const cart = await ctx.db.get("carts", args.cartId);
-    if (!cart || cart.completedAt !== undefined) {
-      throw new Error("Cart not found or already completed");
-    }
-    if (!cart.email) {
-      throw new Error("Cart email is required to create an order");
-    }
-    if (cart.customerId) {
-      await requireDoc(ctx, "customers", cart.customerId, "Customer not found");
-    }
-    if (cart.regionId) {
-      await requireDoc(ctx, "regions", cart.regionId, "Region not found");
-    }
-    if (cart.salesChannelId) {
-      await requireDoc(
-        ctx,
-        "salesChannels",
-        cart.salesChannelId,
-        "Sales channel not found",
-      );
-    }
+    await requireIdentity(ctx);
+    return await createOrderFromCartImpl(ctx, args);
+  },
+});
 
-    const items = await ctx.db
-      .query("cartItems")
-      .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
-      .collect();
-
-    if (items.length === 0) {
-      throw new Error("Cart is empty");
-    }
-
-    const orderId = await ctx.db.insert("orders", {
-      customerId: cart.customerId,
-      cartId: cart._id,
-      regionId: cart.regionId,
-      salesChannelId: cart.salesChannelId,
-      email: cart.email,
-      currencyCode: cart.currencyCode,
-      locale: cart.locale,
-      status: args.status ?? "pending",
-      paymentStatus: "not_paid",
-      total: cart.total,
-      metadata: cart.metadata,
-    });
-
-    await Promise.all(
-      items.map((item) =>
-        ctx.db.insert("orderItems", {
-          orderId,
-          version: 1,
-          variantId: item.variantId,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          fulfilledQuantity: 0,
-          deliveredQuantity: 0,
-          shippedQuantity: 0,
-          returnRequestedQuantity: 0,
-          returnReceivedQuantity: 0,
-          returnDismissedQuantity: 0,
-          writtenOffQuantity: 0,
-          productId: item.productId,
-          title: item.title,
-          variantTitle: item.variantTitle,
-          thumbnail: item.thumbnail,
-          variantSku: item.variantSku,
-          requiresShipping: item.requiresShipping,
-          isTaxInclusive: item.isTaxInclusive,
-          metadata: item.metadata,
-        }),
-      ),
-    );
-
-    const orderAddresses = await ctx.db
-      .query("orderAddresses")
-      .withIndex("by_cart_id", (q) => q.eq("cartId", args.cartId))
-      .collect();
-
-    if (orderAddresses.length === 0) {
-      throw new Error("Order addresses are required to create an order");
-    }
-
-    await Promise.all(
-      orderAddresses.map((address) =>
-        address.orderId === undefined
-          ? ctx.db.patch(address._id, { orderId })
-          : Promise.resolve(),
-      ),
-    );
-
-    await ctx.db.insert("orderShippingMethods", {
-      orderId,
-      name: "Shipping",
-      amount: cart.shippingTotal,
-      isTaxInclusive: false,
-      isCustomAmount: true,
-    });
-
-    await ctx.db.patch(args.cartId, { completedAt: Date.now() });
-
-    return orderId;
+export const createOrderFromCartInternal = internalMutation({
+  args: {
+    cartId: v.id("carts"),
+    status: v.optional(orderStatusValidator),
+  },
+  returns: v.id("orders"),
+  handler: async (ctx, args) => {
+    return await createOrderFromCartImpl(ctx, args);
   },
 });
 
@@ -153,6 +68,7 @@ export const getOrder = query({
     }),
   ),
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const order = await ctx.db.get("orders", args.orderId);
     if (!order) {
       return null;
@@ -183,6 +99,7 @@ export const listOrdersByCustomer = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     return await ctx.db
       .query("orders")
       .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
@@ -197,6 +114,7 @@ export const setOrderStatus = mutation({
     status: orderStatusValidator,
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     await requireDoc(ctx, "orders", args.orderId, "Order not found");
     const patch =
       args.status === "canceled"
@@ -212,10 +130,117 @@ export const setOrderPaymentStatus = mutation({
     paymentStatus: paymentStatusValidator,
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     await requireDoc(ctx, "orders", args.orderId, "Order not found");
     await ctx.db.patch(args.orderId, { paymentStatus: args.paymentStatus });
   },
 });
+
+async function createOrderFromCartImpl(
+  ctx: MutationCtx,
+  args: { cartId: Id<"carts">; status?: string },
+) {
+  const cart = await ctx.db.get("carts", args.cartId);
+  if (!cart || cart.completedAt !== undefined) {
+    throw new Error("Cart not found or already completed");
+  }
+  if (!cart.email) {
+    throw new Error("Cart email is required to create an order");
+  }
+  if (cart.customerId) {
+    await requireDoc(ctx, "customers", cart.customerId, "Customer not found");
+  }
+  if (cart.regionId) {
+    await requireDoc(ctx, "regions", cart.regionId, "Region not found");
+  }
+  if (cart.salesChannelId) {
+    await requireDoc(
+      ctx,
+      "salesChannels",
+      cart.salesChannelId,
+      "Sales channel not found",
+    );
+  }
+
+  const items = await ctx.db
+    .query("cartItems")
+    .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
+    .collect();
+
+  if (items.length === 0) {
+    throw new Error("Cart is empty");
+  }
+
+  const orderId = await ctx.db.insert("orders", {
+    customerId: cart.customerId,
+    cartId: cart._id,
+    regionId: cart.regionId,
+    salesChannelId: cart.salesChannelId,
+    email: cart.email,
+    currencyCode: cart.currencyCode,
+    locale: cart.locale,
+    status: args.status ?? "pending",
+    paymentStatus: "not_paid",
+    total: cart.total,
+    metadata: cart.metadata,
+  });
+
+  await Promise.all(
+    items.map((item) =>
+      ctx.db.insert("orderItems", {
+        orderId,
+        version: 1,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        fulfilledQuantity: 0,
+        deliveredQuantity: 0,
+        shippedQuantity: 0,
+        returnRequestedQuantity: 0,
+        returnReceivedQuantity: 0,
+        returnDismissedQuantity: 0,
+        writtenOffQuantity: 0,
+        productId: item.productId,
+        title: item.title,
+        variantTitle: item.variantTitle,
+        thumbnail: item.thumbnail,
+        variantSku: item.variantSku,
+        requiresShipping: item.requiresShipping,
+        isTaxInclusive: item.isTaxInclusive,
+        metadata: item.metadata,
+      }),
+    ),
+  );
+
+  const orderAddresses = await ctx.db
+    .query("orderAddresses")
+    .withIndex("by_cart_id", (q) => q.eq("cartId", args.cartId))
+    .collect();
+
+  if (orderAddresses.length === 0) {
+    throw new Error("Order addresses are required to create an order");
+  }
+
+  await Promise.all(
+    orderAddresses.map((address) =>
+      address.orderId === undefined
+        ? ctx.db.patch(address._id, { orderId })
+        : Promise.resolve(),
+    ),
+  );
+
+  await ctx.db.insert("orderShippingMethods", {
+    orderId,
+    name: "Shipping",
+    amount: cart.shippingTotal,
+    isTaxInclusive: false,
+    isCustomAmount: true,
+  });
+
+  await ctx.db.patch(args.cartId, { completedAt: Date.now() });
+
+  return orderId;
+}
 
 export const seedPriceListScenario = internalMutation({
   args: {

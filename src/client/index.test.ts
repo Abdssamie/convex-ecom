@@ -6,7 +6,8 @@ import type { Id } from "../component/_generated/dataModel";
 
 export const { createCart, getCart } = exposeApi(components.convexEcommerce, {
   auth: async (ctx, _operation) => {
-    return (await ctx.auth.getUserIdentity())?.subject ?? null;
+    const identity = await ctx.auth.getUserIdentity();
+    return identity?.tokenIdentifier ?? null;
   },
 });
 
@@ -22,12 +23,14 @@ const testApi = (
 describe("client tests", () => {
   test("should be able to use client", async () => {
     const t = initConvexTest().withIdentity({
-      subject: "user1",
+      tokenIdentifier: "https://example.com|user1",
     });
     const cartId = await t.mutation(testApi.createCart, {
       currencyCode: "usd",
     });
-    const cart = await t.query(testApi.getCart, { cartId: cartId as Id<"carts"> });
+    const cart = await t.query(testApi.getCart, {
+      cartId: cartId as Id<"carts">,
+    });
     expect(cart?.cart.currencyCode).toBe("usd");
   });
 });

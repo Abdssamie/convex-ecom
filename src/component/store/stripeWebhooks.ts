@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
-import { api } from "../_generated/api";
+import { api, internal } from "../_generated/api";
 import { mapStripeStatus } from "./stripeStatus";
 
 const stripePaymentStatus = v.union(
@@ -83,9 +83,12 @@ export const handleStripePaymentIntent = internalMutation({
       if (existingOrder) {
         orderId = existingOrder._id;
       } else {
-        orderId = await ctx.runMutation(api.store.orders.createOrderFromCart, {
-          cartId: payment.cartId,
-        });
+        orderId = await ctx.runMutation(
+          internal.store.orders.createOrderFromCartInternal,
+          {
+            cartId: payment.cartId,
+          },
+        );
       }
       await ctx.db.patch(payment._id, { orderId });
     }
