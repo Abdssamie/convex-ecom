@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 import { mutation, query, internalMutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
@@ -30,6 +30,8 @@ const orderShippingMethodValidator =
     _id: v.id("orderShippingMethods"),
     _creationTime: v.number(),
   });
+
+type OrderStatus = Infer<typeof orderStatusValidator>;
 
 export const createOrderFromCart = mutation({
   args: {
@@ -138,7 +140,7 @@ export const setOrderPaymentStatus = mutation({
 
 async function createOrderFromCartImpl(
   ctx: MutationCtx,
-  args: { cartId: Id<"carts">; status?: string },
+  args: { cartId: Id<"carts">; status?: OrderStatus },
 ) {
   const cart = await ctx.db.get("carts", args.cartId);
   if (!cart || cart.completedAt !== undefined) {
