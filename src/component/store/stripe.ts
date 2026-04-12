@@ -51,7 +51,7 @@ export const createCheckoutSession = action({
   returns: v.object({ sessionId: v.string(), url: v.string() }),
   handler: async (ctx, args): Promise<{ sessionId: string; url: string }> => {
     const cartResult: { cart: Doc<"carts">; items: Doc<"cartItems">[] } | null =
-      await ctx.runQuery(api.store.carts.getCart, {
+      await ctx.runQuery(internal.store.carts.getCartInternal, {
         cartId: args.cartId,
       });
     if (!cartResult) {

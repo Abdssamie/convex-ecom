@@ -85,7 +85,10 @@ export function exposeApi(
       },
     }),
     createCart: mutationGeneric({
-      args: { currencyCode: v.string(), priceListId: v.optional(v.id("priceLists")) },
+      args: {
+        currencyCode: v.string(),
+        priceListId: v.optional(v.id("priceLists")),
+      },
       handler: async (ctx, args) => {
         await authorize(
           ctx,

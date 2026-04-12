@@ -6,6 +6,10 @@ export const modules = import.meta.glob("./**/*.*s");
 
 export function initConvexTest() {
   const t = convexTest(schema, modules);
-  return t;
+  return t.withIdentity({
+    tokenIdentifier: "https://example.com|test-user",
+    subject: "test-user",
+    issuer: "https://example.com",
+  });
 }
 test("setup", () => {});

@@ -1,8 +1,13 @@
 import { v } from "convex/values";
-import { query, mutation, type MutationCtx } from "../_generated/server";
+import {
+  query,
+  mutation,
+  internalQuery,
+  type MutationCtx,
+} from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireDoc, requireIdentity } from "../shared/guards";
 import { getBasePriceForVariant } from "./pricing";
 
 const cartValidator = schema.tables.carts.validator.extend({
@@ -16,6 +21,31 @@ const cartItemValidator = schema.tables.cartItems.validator.extend({
 });
 
 export const getCart = query({
+  args: {
+    cartId: v.id("carts"),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      cart: cartValidator,
+      items: v.array(cartItemValidator),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    await requireIdentity(ctx);
+    const cart = await ctx.db.get("carts", args.cartId);
+    if (!cart) {
+      return null;
+    }
+    const items = await ctx.db
+      .query("cartItems")
+      .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
+      .collect();
+    return { cart, items };
+  },
+});
+
+export const getCartInternal = internalQuery({
   args: {
     cartId: v.id("carts"),
   },
@@ -85,6 +115,7 @@ export const addItem = mutation({
   },
   returns: v.id("cartItems"),
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     if (args.quantity <= 0) {
       throw new Error("Quantity must be greater than 0");
     }
@@ -142,6 +173,7 @@ export const updateItem = mutation({
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const item = await ctx.db.get("cartItems", args.cartItemId);
     if (!item) {
       throw new Error("Cart item not found");
@@ -172,6 +204,7 @@ export const removeItem = mutation({
     cartItemId: v.id("cartItems"),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const item = await ctx.db.get("cartItems", args.cartItemId);
     if (!item) {
       return;
@@ -191,6 +224,7 @@ export const setCustomer = mutation({
     customerId: v.id("customers"),
   },
   handler: async (ctx, args) => {
+    await requireIdentity(ctx);
     const cart = await ctx.db.get("carts", args.cartId);
     if (!cart || cart.completedAt !== undefined) {
       throw new Error("Cart not found or already completed");
