@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
-import { api, internal } from "../_generated/api";
+import { internal } from "../_generated/api";
 import { mapStripeStatus } from "./stripeStatus";
 
 const stripePaymentStatus = v.union(
