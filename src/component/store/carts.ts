@@ -6,6 +6,7 @@ import {
   type MutationCtx,
 } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
 import { requireCartAccess, requireDoc } from "../shared/guards";
 import { getBasePriceForVariant, requireActivePriceList } from "./pricing";
@@ -23,33 +24,45 @@ const cartItemValidator = schema.tables.cartItems.validator.extend({
 export const getCart = query({
   args: {
     cartId: v.id("carts"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
     v.object({
       cart: cartValidator,
       items: v.array(cartItemValidator),
+      itemsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
     const cart = await requireCartAccess(ctx, args.cartId);
-    const items = await ctx.db
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
+    const paginatedItems = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
-      .collect();
-    return { cart, items };
+      .paginate(itemsPaginationOpts);
+    return {
+      cart,
+      items: paginatedItems.page,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 
 export const getCartInternal = internalQuery({
   args: {
     cartId: v.id("carts"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
     v.object({
       cart: cartValidator,
       items: v.array(cartItemValidator),
+      itemsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -57,11 +70,19 @@ export const getCartInternal = internalQuery({
     if (!cart) {
       return null;
     }
-    const items = await ctx.db
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
+    const paginatedItems = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
-      .collect();
-    return { cart, items };
+      .paginate(itemsPaginationOpts);
+    return {
+      cart,
+      items: paginatedItems.page,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 

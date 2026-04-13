@@ -65,6 +65,7 @@ export const createOrderFromCartInternal = internalMutation({
 export const getOrder = query({
   args: {
     orderId: v.id("orders"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
@@ -73,27 +74,39 @@ export const getOrder = query({
       items: v.array(orderItemValidator),
       addresses: v.array(orderAddressValidator),
       shippingMethods: v.array(orderShippingMethodValidator),
+      itemsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
     const order = await requireOrderAccess(ctx, args.orderId);
 
-    const [items, addresses, shippingMethods] = await Promise.all([
-      ctx.db
-        .query("orderItems")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-      ctx.db
-        .query("orderAddresses")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-      ctx.db
-        .query("orderShippingMethods")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-    ]);
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
 
-    return { order, items, addresses, shippingMethods };
+    const paginatedItems = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .paginate(itemsPaginationOpts);
+
+    const addresses = await ctx.db
+      .query("orderAddresses")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    const shippingMethods = await ctx.db
+      .query("orderShippingMethods")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    return {
+      order,
+      items: paginatedItems.page,
+      addresses,
+      shippingMethods,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 
