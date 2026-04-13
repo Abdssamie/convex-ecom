@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 import type { Id } from "../_generated/dataModel";
 
@@ -18,6 +18,7 @@ export const listTaxRates = query({
   },
   returns: v.array(taxRateValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.taxRegionId !== undefined && args.code !== undefined) {
       return await ctx.db
         .query("taxRates")
@@ -46,6 +47,7 @@ export const getTaxRate = query({
   },
   returns: v.union(v.null(), taxRateValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("taxRates", args.taxRateId);
   },
 });
@@ -56,6 +58,7 @@ export const createTaxRate = mutation({
   },
   returns: v.id("taxRates"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "taxRegions",
@@ -89,6 +92,7 @@ export const updateTaxRate = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await requireDoc(
       ctx,
       "taxRates",

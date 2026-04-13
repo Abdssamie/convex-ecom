@@ -157,6 +157,38 @@ describe("store carts", () => {
       });
     }).rejects.toThrowError("No price for variant in cart currency");
 
+    const draftProductVariantId = await t.run(async (ctx) => {
+      const productId = await ctx.db.insert("products", {
+        title: "Draft Product",
+        handle: "draft-product",
+        status: "draft",
+        isGiftcard: false,
+        discountable: true,
+      });
+      const variantId = await ctx.db.insert("variants", {
+        productId,
+        title: "Draft Variant",
+        allowBackorder: false,
+        manageInventory: true,
+        variantRank: 0,
+      });
+      await ctx.db.insert("prices", {
+        variantId,
+        currencyCode: "usd",
+        amount: 900,
+        priceListId: null,
+      });
+      return variantId;
+    });
+
+    await expect(async () => {
+      await t.mutation(api.store.carts.addItem, {
+        cartId,
+        variantId: draftProductVariantId,
+        quantity: 1,
+      });
+    }).rejects.toThrowError("Product is not published");
+
     await t.run(async (ctx) => {
       await ctx.db.patch(cartId, { completedAt: Date.now() });
     });

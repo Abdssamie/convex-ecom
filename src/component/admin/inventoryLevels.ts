@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const inventoryLevelValidator = schema.tables.inventoryLevels.validator.extend({
@@ -17,6 +17,7 @@ export const listInventoryLevels = query({
   },
   returns: v.array(inventoryLevelValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.inventoryItemId && args.locationId) {
       return await ctx.db
         .query("inventoryLevels")
@@ -56,6 +57,7 @@ export const getInventoryLevel = query({
   },
   returns: v.union(v.null(), inventoryLevelValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("inventoryLevels", args.inventoryLevelId);
   },
 });
@@ -71,6 +73,7 @@ export const createInventoryLevel = mutation({
   },
   returns: v.id("inventoryLevels"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "inventoryItems",
@@ -109,6 +112,7 @@ export const updateInventoryLevel = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "inventoryLevels",

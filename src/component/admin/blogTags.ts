@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const blogTagValidator = schema.tables.blogTags.validator.extend({
@@ -17,6 +17,7 @@ export const listBlogTags = query({
     name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.handle !== undefined) {
       return await ctx.db
         .query("blogTags")
@@ -41,6 +42,7 @@ export const getBlogTag = query({
   },
   returns: v.union(v.null(), blogTagValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("blogTags", args.tagId);
   },
 });
@@ -53,6 +55,7 @@ export const createBlogTag = mutation({
   },
   returns: v.id("blogTags"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.handle.trim().length === 0) {
       throw new Error("Handle must not be empty");
     }
@@ -79,6 +82,7 @@ export const updateBlogTag = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "blogTags", args.tagId, "Tag not found");
     if (args.handle !== undefined) {
       if (args.handle.trim().length === 0) {
@@ -112,6 +116,7 @@ export const deleteBlogTag = mutation({
     tagId: v.id("blogTags"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "blogTags", args.tagId, "Tag not found");
 
     const references = await ctx.db

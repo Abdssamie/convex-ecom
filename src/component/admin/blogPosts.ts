@@ -3,7 +3,7 @@ import { mutation, query } from "../_generated/server";
 import type { MutationCtx } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 import { blogPostStatusValidator } from "../shared/validators";
 import type { Id } from "../_generated/dataModel";
@@ -54,6 +54,7 @@ export const listBlogPosts = query({
     handle: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.handle !== undefined) {
       return await ctx.db
         .query("blogPosts")
@@ -78,6 +79,7 @@ export const getBlogPost = query({
   },
   returns: v.union(v.null(), blogPostValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("blogPosts", args.postId);
   },
 });
@@ -96,6 +98,7 @@ export const createBlogPost = mutation({
   },
   returns: v.id("blogPosts"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.handle.trim().length === 0) {
       throw new Error("Handle must not be empty");
     }
@@ -157,6 +160,7 @@ export const updateBlogPost = mutation({
     tagIds: v.optional(v.array(v.id("blogTags"))),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existingPost = await requireDoc(
       ctx,
       "blogPosts",
@@ -240,6 +244,7 @@ export const deleteBlogPost = mutation({
     postId: v.id("blogPosts"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "blogPosts", args.postId, "Blog post not found");
 
     const tagLinks = await ctx.db

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const refundValidator = schema.tables.refunds.validator.extend({
@@ -16,6 +16,7 @@ export const listRefunds = query({
   },
   returns: v.array(refundValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.paymentId) {
       return await ctx.db
         .query("refunds")
@@ -32,6 +33,7 @@ export const getRefund = query({
   },
   returns: v.union(v.null(), refundValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("refunds", args.refundId);
   },
 });
@@ -47,6 +49,7 @@ export const createRefund = mutation({
   },
   returns: v.id("refunds"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "payments", args.paymentId, "Payment not found");
     if (args.refundReasonId) {
       await requireDoc(
@@ -78,6 +81,7 @@ export const updateRefund = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "refunds", args.refundId, "Refund not found");
     if (args.paymentId) {
       await requireDoc(ctx, "payments", args.paymentId, "Payment not found");
@@ -110,6 +114,7 @@ export const deleteRefund = mutation({
     refundId: v.id("refunds"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "refunds", args.refundId, "Refund not found");
     await ctx.db.delete(args.refundId);
   },

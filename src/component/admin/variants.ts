@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const variantValidator = schema.tables.variants.validator.extend({
@@ -16,6 +16,7 @@ export const listVariantsByProduct = query({
   },
   returns: v.array(variantValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db
       .query("variants")
       .withIndex("by_product", (q) => q.eq("productId", args.productId))
@@ -29,6 +30,7 @@ export const getVariant = query({
   },
   returns: v.union(v.null(), variantValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("variants", args.variantId);
   },
 });
@@ -39,6 +41,7 @@ export const createVariant = mutation({
   },
   returns: v.id("variants"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "products",
@@ -81,6 +84,7 @@ export const updateVariant = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db.get("variants", args.variantId);
     if (!existing) {
       throw new Error("Variant not found");

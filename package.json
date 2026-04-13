@@ -72,7 +72,8 @@
     "react": "^18.3.1 || ^19.0.0"
   },
   "dependencies": {
-    "@convex-dev/stripe": "^0.1.4"
+    "@convex-dev/stripe": "^0.1.4",
+    "stripe": "^22.0.1"
   },
   "devDependencies": {
     "@convex-dev/eslint-plugin": "^1.2.0",

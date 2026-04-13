@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import {
   promotionStatusValidator,
   promotionTypeValidator,
@@ -24,6 +24,7 @@ export const listPromotions = query({
     campaignId: v.optional(v.id("promotionCampaigns")),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.code !== undefined) {
       return await ctx.db
         .query("promotions")
@@ -66,6 +67,7 @@ export const getPromotion = query({
   },
   returns: v.union(v.null(), promotionValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("promotions", args.promotionId);
   },
 });
@@ -76,6 +78,7 @@ export const createPromotion = mutation({
   },
   returns: v.id("promotions"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.promotion.used !== 0) {
       throw new Error("Promotion used count must start at 0");
     }
@@ -103,6 +106,7 @@ export const updatePromotion = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "promotions",

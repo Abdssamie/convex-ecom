@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { mutation } from "../_generated/server";
-import { requireDoc } from "../shared/guards";
+import { requireCartAccess, requireDoc } from "../shared/guards";
 import { addressRoleValidator } from "../shared/validators";
 
 export const createOrderAddress = mutation({
@@ -23,7 +23,7 @@ export const createOrderAddress = mutation({
   },
   returns: v.id("orderAddresses"),
   handler: async (ctx, args) => {
-    const cart = await requireDoc(ctx, "carts", args.cartId, "Cart not found");
+    const cart = await requireCartAccess(ctx, args.cartId);
     if (cart.completedAt !== undefined) {
       throw new Error("Cart already completed");
     }

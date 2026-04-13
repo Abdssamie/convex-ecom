@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc, requireIdentity } from "../shared/guards";
+import { requireAdmin, requireDoc, requireIdentity } from "../shared/guards";
 import { productStatusValidator } from "../shared/validators";
 import { buildPatch } from "../shared/utils";
 
@@ -17,6 +17,7 @@ export const listProducts = query({
     status: v.optional(productStatusValidator),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireIdentity(ctx);
     if (args.status === undefined) {
       return await ctx.db.query("products").paginate(args.paginationOpts);
@@ -35,6 +36,7 @@ export const getProduct = query({
   },
   returns: v.union(v.null(), productValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireIdentity(ctx);
     return await ctx.db.get("products", args.productId);
   },
@@ -46,6 +48,7 @@ export const createProduct = mutation({
   },
   returns: v.id("products"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireIdentity(ctx);
     return await ctx.db.insert("products", args.product);
   },
@@ -66,6 +69,7 @@ export const updateProduct = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireIdentity(ctx);
     await requireDoc(ctx, "products", args.productId, "Product not found");
 
@@ -95,6 +99,7 @@ export const archiveProduct = mutation({
     productId: v.id("products"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireIdentity(ctx);
     await requireDoc(ctx, "products", args.productId, "Product not found");
     await ctx.db.patch(args.productId, { status: "rejected" });

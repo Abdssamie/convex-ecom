@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { attemptStatusValidator } from "../shared/validators";
 import { buildPatch } from "../shared/utils";
 
@@ -17,6 +17,7 @@ export const listPaymentAttempts = query({
   },
   returns: v.array(paymentAttemptValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.paymentId) {
       return await ctx.db
         .query("paymentAttempts")
@@ -33,6 +34,7 @@ export const getPaymentAttempt = query({
   },
   returns: v.union(v.null(), paymentAttemptValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("paymentAttempts", args.paymentAttemptId);
   },
 });
@@ -45,6 +47,7 @@ export const createPaymentAttempt = mutation({
   },
   returns: v.id("paymentAttempts"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "payments", args.paymentId, "Payment not found");
     return await ctx.db.insert("paymentAttempts", {
       paymentId: args.paymentId,
@@ -63,6 +66,7 @@ export const updatePaymentAttempt = mutation({
     error: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "paymentAttempts",
