@@ -49,6 +49,7 @@ import type * as store_orders from "../store/orders.js";
 import type * as store_pricing from "../store/pricing.js";
 import type * as store_products from "../store/products.js";
 import type * as store_stripe from "../store/stripe.js";
+import type * as store_stripeStatus from "../store/stripeStatus.js";
 import type * as store_stripeWebhooks from "../store/stripeWebhooks.js";
 
 import type {
@@ -100,6 +101,7 @@ const fullApi: ApiFromModules<{
   "store/pricing": typeof store_pricing;
   "store/products": typeof store_products;
   "store/stripe": typeof store_stripe;
+  "store/stripeStatus": typeof store_stripeStatus;
   "store/stripeWebhooks": typeof store_stripeWebhooks;
 }> = anyApi as any;
 

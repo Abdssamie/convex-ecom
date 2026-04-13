@@ -26,6 +26,7 @@ export const handleStripePaymentIntent = internalMutation({
     status: stripePaymentStatus,
     amount: v.number(),
     currency: v.string(),
+    stripeEventId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const payment = await resolveStripePayment(ctx, {
@@ -34,6 +35,13 @@ export const handleStripePaymentIntent = internalMutation({
     });
 
     if (!payment) {
+      return;
+    }
+
+    if (
+      args.stripeEventId &&
+      hasProcessedStripeEvent(payment.metadata, args.stripeEventId)
+    ) {
       return;
     }
 
@@ -104,6 +112,15 @@ export const handleStripePaymentIntent = internalMutation({
     if (orderId) {
       await ctx.db.patch(orderId, { paymentStatus: status });
     }
+
+    if (args.stripeEventId) {
+      await markStripeEventProcessed(
+        ctx,
+        payment._id,
+        payment.metadata,
+        args.stripeEventId,
+      );
+    }
   },
 });
 
@@ -168,17 +185,6 @@ export const handleSignedStripeWebhook = internalMutation({
     }
 
     const paymentIntent = event.data.object;
-    const payment = await resolveStripePayment(ctx, {
-      paymentIntentId: paymentIntent.id,
-      paymentId: paymentIntent.metadata?.paymentId,
-    });
-    if (!payment) {
-      return;
-    }
-
-    if (hasProcessedStripeEvent(payment.metadata, event.id)) {
-      return;
-    }
 
     await ctx.runMutation(
       internal.store.stripeWebhooks.handleStripePaymentIntent,
@@ -188,14 +194,8 @@ export const handleSignedStripeWebhook = internalMutation({
         status: paymentIntent.status,
         amount: paymentIntent.amount,
         currency: paymentIntent.currency,
+        stripeEventId: event.id,
       },
-    );
-
-    await markStripeEventProcessed(
-      ctx,
-      payment._id,
-      payment.metadata,
-      event.id,
     );
   },
 });

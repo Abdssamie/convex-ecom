@@ -26,14 +26,11 @@ export const getCart = query({
     cartId: v.id("carts"),
     itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
-  returns: v.union(
-    v.null(),
-    v.object({
-      cart: cartValidator,
-      items: v.array(cartItemValidator),
-      itemsContinueCursor: v.optional(v.string()),
-    }),
-  ),
+  returns: v.object({
+    cart: cartValidator,
+    items: v.array(cartItemValidator),
+    itemsContinueCursor: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
     const cart = await requireCartAccess(ctx, args.cartId);
     const itemsPaginationOpts = args.itemsPaginationOpts ?? {
