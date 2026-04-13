@@ -55,12 +55,14 @@ export const listBlogPosts = query({
 export const getBlogPostByHandle = query({
   args: {
     handle: v.string(),
+    tagsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
     v.object({
       post: blogPostValidator,
       tags: v.array(blogTagValidator),
+      tagsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -72,12 +74,19 @@ export const getBlogPostByHandle = query({
       return null;
     }
 
-    const tagLinks = await ctx.db
+    const tagsPaginationOpts = args.tagsPaginationOpts ?? {
+      numItems: 50,
+      cursor: null,
+    };
+
+    const paginatedTagLinks = await ctx.db
       .query("blogPostTags")
       .withIndex("by_post_id", (q) => q.eq("postId", post._id))
-      .collect();
+      .paginate(tagsPaginationOpts);
 
-    const tagIds = [...new Set(tagLinks.map((link) => link.tagId))];
+    const tagIds = [
+      ...new Set(paginatedTagLinks.page.map((link) => link.tagId)),
+    ];
     const tags = await Promise.all(
       tagIds.map((tagId) => ctx.db.get("blogTags", tagId)),
     );
@@ -85,6 +94,7 @@ export const getBlogPostByHandle = query({
     return {
       post,
       tags: tags.filter((tag): tag is NonNullable<typeof tag> => tag !== null),
+      tagsContinueCursor: paginatedTagLinks.continueCursor,
     };
   },
 });

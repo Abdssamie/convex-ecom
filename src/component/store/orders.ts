@@ -66,6 +66,8 @@ export const getOrder = query({
   args: {
     orderId: v.id("orders"),
     itemsPaginationOpts: v.optional(paginationOptsValidator),
+    addressesPaginationOpts: v.optional(paginationOptsValidator),
+    shippingMethodsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
@@ -75,6 +77,8 @@ export const getOrder = query({
       addresses: v.array(orderAddressValidator),
       shippingMethods: v.array(orderShippingMethodValidator),
       itemsContinueCursor: v.optional(v.string()),
+      addressesContinueCursor: v.optional(v.string()),
+      shippingMethodsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -84,28 +88,40 @@ export const getOrder = query({
       numItems: 100,
       cursor: null,
     };
+    const addressesPaginationOpts = args.addressesPaginationOpts ?? {
+      numItems: 50,
+      cursor: null,
+    };
+    const shippingMethodsPaginationOpts =
+      args.shippingMethodsPaginationOpts ?? {
+        numItems: 50,
+        cursor: null,
+      };
 
-    const paginatedItems = await ctx.db
-      .query("orderItems")
-      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-      .paginate(itemsPaginationOpts);
-
-    const addresses = await ctx.db
-      .query("orderAddresses")
-      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-      .collect();
-
-    const shippingMethods = await ctx.db
-      .query("orderShippingMethods")
-      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-      .collect();
+    const [paginatedItems, paginatedAddresses, paginatedShippingMethods] =
+      await Promise.all([
+        ctx.db
+          .query("orderItems")
+          .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+          .paginate(itemsPaginationOpts),
+        ctx.db
+          .query("orderAddresses")
+          .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+          .paginate(addressesPaginationOpts),
+        ctx.db
+          .query("orderShippingMethods")
+          .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+          .paginate(shippingMethodsPaginationOpts),
+      ]);
 
     return {
       order,
       items: paginatedItems.page,
-      addresses,
-      shippingMethods,
+      addresses: paginatedAddresses.page,
+      shippingMethods: paginatedShippingMethods.page,
       itemsContinueCursor: paginatedItems.continueCursor,
+      addressesContinueCursor: paginatedAddresses.continueCursor,
+      shippingMethodsContinueCursor: paginatedShippingMethods.continueCursor,
     };
   },
 });
