@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { promotionRuleOperatorValidator } from "../shared/validators";
 import { buildPatch } from "../shared/utils";
 
@@ -18,6 +18,7 @@ export const listPromotionConditions = query({
   },
   returns: v.array(promotionConditionValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.promotionId !== undefined) {
       return await ctx.db
         .query("promotionConditions")
@@ -37,6 +38,7 @@ export const getPromotionCondition = query({
   },
   returns: v.union(v.null(), promotionConditionValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("promotionConditions", args.promotionConditionId);
   },
 });
@@ -47,6 +49,7 @@ export const createPromotionCondition = mutation({
   },
   returns: v.id("promotionConditions"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "promotions",
@@ -66,6 +69,7 @@ export const updatePromotionCondition = mutation({
     value: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "promotionConditions",

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const regionValidator = schema.tables.regions.validator.extend({
@@ -17,6 +17,7 @@ export const listRegions = query({
   },
   returns: v.array(regionValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const { currencyCode, name } = args;
     if (currencyCode !== undefined) {
       return await ctx.db
@@ -44,6 +45,7 @@ export const getRegion = query({
   },
   returns: v.union(v.null(), regionValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("regions", args.regionId);
   },
 });
@@ -57,6 +59,7 @@ export const createRegion = mutation({
   },
   returns: v.id("regions"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.insert("regions", {
       name: args.name,
       currencyCode: args.currencyCode,
@@ -75,6 +78,7 @@ export const updateRegion = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "regions", args.regionId, "Region not found");
     const patch = buildPatch({
       name: args.name,

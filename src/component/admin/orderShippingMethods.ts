@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const orderShippingMethodValidator =
@@ -18,6 +18,7 @@ export const listOrderShippingMethods = query({
   },
   returns: v.array(orderShippingMethodValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.orderId) {
       return await ctx.db
         .query("orderShippingMethods")
@@ -44,6 +45,7 @@ export const getOrderShippingMethod = query({
   },
   returns: v.union(v.null(), orderShippingMethodValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("orderShippingMethods", args.orderShippingMethodId);
   },
 });
@@ -61,6 +63,7 @@ export const createOrderShippingMethod = mutation({
   },
   returns: v.id("orderShippingMethods"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "orders", args.orderId, "Order not found");
     return await ctx.db.insert("orderShippingMethods", {
       orderId: args.orderId,
@@ -88,6 +91,7 @@ export const updateOrderShippingMethod = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "orderShippingMethods",

@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const fulfillmentValidator = schema.tables.fulfillments.validator.extend({
@@ -17,6 +17,7 @@ export const listFulfillments = query({
     locationId: v.optional(v.id("locations")),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.orderId) {
       return await ctx.db
         .query("fulfillments")
@@ -43,6 +44,7 @@ export const getFulfillment = query({
   },
   returns: v.union(v.null(), fulfillmentValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("fulfillments", args.fulfillmentId);
   },
 });
@@ -66,6 +68,7 @@ export const createFulfillment = mutation({
   },
   returns: v.id("fulfillments"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "orders", args.orderId, "Order not found");
     await requireDoc(ctx, "locations", args.locationId, "Location not found");
     if (args.orderShippingMethodId) {
@@ -117,6 +120,7 @@ export const updateFulfillment = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await requireDoc(
       ctx,
       "fulfillments",

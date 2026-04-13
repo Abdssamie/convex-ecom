@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const fulfillmentAddressValidator =
@@ -17,6 +17,7 @@ export const listFulfillmentAddresses = query({
   },
   returns: v.array(fulfillmentAddressValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.fulfillmentId) {
       return await ctx.db
         .query("fulfillmentAddresses")
@@ -35,6 +36,7 @@ export const getFulfillmentAddress = query({
   },
   returns: v.union(v.null(), fulfillmentAddressValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("fulfillmentAddresses", args.fulfillmentAddressId);
   },
 });
@@ -56,6 +58,7 @@ export const createFulfillmentAddress = mutation({
   },
   returns: v.id("fulfillmentAddresses"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "fulfillments",
@@ -96,6 +99,7 @@ export const updateFulfillmentAddress = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "fulfillmentAddresses",

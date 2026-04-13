@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { paymentStatusValidator } from "../shared/validators";
 import { buildPatch } from "../shared/utils";
 
@@ -18,6 +18,7 @@ export const listPayments = query({
   },
   returns: v.array(paymentValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.cartId) {
       return await ctx.db
         .query("payments")
@@ -44,6 +45,7 @@ export const getPayment = query({
   },
   returns: v.union(v.null(), paymentValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("payments", args.paymentId);
   },
 });
@@ -62,6 +64,7 @@ export const createPayment = mutation({
   },
   returns: v.id("payments"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "carts", args.cartId, "Cart not found");
     if (args.orderId) {
       const order = await requireDoc(
@@ -102,6 +105,7 @@ export const updatePayment = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await requireDoc(
       ctx,
       "payments",

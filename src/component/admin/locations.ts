@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const locationValidator = schema.tables.locations.validator.extend({
@@ -15,6 +15,7 @@ export const listLocations = query({
   },
   returns: v.array(locationValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.query("locations").take(args.limit ?? 50);
   },
 });
@@ -25,6 +26,7 @@ export const getLocation = query({
   },
   returns: v.union(v.null(), locationValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("locations", args.locationId);
   },
 });
@@ -37,6 +39,7 @@ export const createLocation = mutation({
   },
   returns: v.id("locations"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.insert("locations", {
       name: args.name,
       externalId: args.externalId,
@@ -53,6 +56,7 @@ export const updateLocation = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "locations", args.locationId, "Location not found");
     const patch = buildPatch({
       name: args.name,

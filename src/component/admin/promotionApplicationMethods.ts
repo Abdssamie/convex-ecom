@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import {
   applicationMethodAllocationValidator,
   applicationMethodTargetTypeValidator,
@@ -22,6 +22,7 @@ export const listPromotionApplicationMethods = query({
   },
   returns: v.array(promotionApplicationMethodValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.promotionId !== undefined) {
       return await ctx.db
         .query("promotionApplicationMethods")
@@ -43,6 +44,7 @@ export const getPromotionApplicationMethod = query({
   },
   returns: v.union(v.null(), promotionApplicationMethodValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get(
       "promotionApplicationMethods",
       args.promotionApplicationMethodId,
@@ -57,6 +59,7 @@ export const createPromotionApplicationMethod = mutation({
   },
   returns: v.id("promotionApplicationMethods"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "promotions",
@@ -82,6 +85,7 @@ export const updatePromotionApplicationMethod = mutation({
     maxQuantity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "promotionApplicationMethods",

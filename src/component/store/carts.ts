@@ -6,9 +6,10 @@ import {
   type MutationCtx,
 } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
+import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc, requireIdentity } from "../shared/guards";
-import { getBasePriceForVariant } from "./pricing";
+import { requireCartAccess, requireDoc } from "../shared/guards";
+import { getBasePriceForVariant, requireActivePriceList } from "./pricing";
 
 const cartValidator = schema.tables.carts.validator.extend({
   _id: v.id("carts"),
@@ -23,37 +24,42 @@ const cartItemValidator = schema.tables.cartItems.validator.extend({
 export const getCart = query({
   args: {
     cartId: v.id("carts"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
-  returns: v.union(
-    v.null(),
-    v.object({
-      cart: cartValidator,
-      items: v.array(cartItemValidator),
-    }),
-  ),
+  returns: v.object({
+    cart: cartValidator,
+    items: v.array(cartItemValidator),
+    itemsContinueCursor: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
-    const cart = await ctx.db.get("carts", args.cartId);
-    if (!cart) {
-      return null;
-    }
-    const items = await ctx.db
+    const cart = await requireCartAccess(ctx, args.cartId);
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
+    const paginatedItems = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
-      .collect();
-    return { cart, items };
+      .paginate(itemsPaginationOpts);
+    return {
+      cart,
+      items: paginatedItems.page,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 
 export const getCartInternal = internalQuery({
   args: {
     cartId: v.id("carts"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
     v.object({
       cart: cartValidator,
       items: v.array(cartItemValidator),
+      itemsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
@@ -61,11 +67,19 @@ export const getCartInternal = internalQuery({
     if (!cart) {
       return null;
     }
-    const items = await ctx.db
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
+    const paginatedItems = await ctx.db
       .query("cartItems")
       .withIndex("by_cart", (q) => q.eq("cartId", args.cartId))
-      .collect();
-    return { cart, items };
+      .paginate(itemsPaginationOpts);
+    return {
+      cart,
+      items: paginatedItems.page,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 
@@ -78,22 +92,7 @@ export const createCart = mutation({
   returns: v.id("carts"),
   handler: async (ctx, args) => {
     if (args.priceListId) {
-      const priceList = await requireDoc(
-        ctx,
-        "priceLists",
-        args.priceListId,
-        "Price list not found",
-      );
-      if (priceList.status !== "active") {
-        throw new Error("Price list is not active");
-      }
-      const now = Date.now();
-      if (priceList.startsAt !== undefined && now < priceList.startsAt) {
-        throw new Error("Price list is not active yet");
-      }
-      if (priceList.endsAt !== undefined && now > priceList.endsAt) {
-        throw new Error("Price list has expired");
-      }
+      await requireActivePriceList(ctx, args.priceListId);
     }
     const cartId = await ctx.db.insert("carts", {
       currencyCode: args.currencyCode,
@@ -115,17 +114,30 @@ export const addItem = mutation({
   },
   returns: v.id("cartItems"),
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
     if (args.quantity <= 0) {
       throw new Error("Quantity must be greater than 0");
     }
 
-    const cart = await ctx.db.get("carts", args.cartId);
-    if (!cart || cart.completedAt !== undefined) {
+    const cart = await requireCartAccess(ctx, args.cartId);
+    if (cart.completedAt !== undefined) {
       throw new Error("Cart not found or already completed");
     }
 
-    await requireDoc(ctx, "variants", args.variantId, "Variant not found");
+    const variant = await requireDoc(
+      ctx,
+      "variants",
+      args.variantId,
+      "Variant not found",
+    );
+    const product = await requireDoc(
+      ctx,
+      "products",
+      variant.productId,
+      "Product not found",
+    );
+    if (product.status !== "published") {
+      throw new Error("Product is not published");
+    }
 
     const price = await getBasePriceForVariant(
       ctx,
@@ -173,14 +185,13 @@ export const updateItem = mutation({
     quantity: v.number(),
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
     const item = await ctx.db.get("cartItems", args.cartItemId);
     if (!item) {
       throw new Error("Cart item not found");
     }
 
-    const cart = await ctx.db.get("carts", item.cartId);
-    if (!cart || cart.completedAt !== undefined) {
+    const cart = await requireCartAccess(ctx, item.cartId);
+    if (cart.completedAt !== undefined) {
       throw new Error("Cart not found or already completed");
     }
 
@@ -204,13 +215,12 @@ export const removeItem = mutation({
     cartItemId: v.id("cartItems"),
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
     const item = await ctx.db.get("cartItems", args.cartItemId);
     if (!item) {
       return;
     }
-    const cart = await ctx.db.get("carts", item.cartId);
-    if (!cart || cart.completedAt !== undefined) {
+    const cart = await requireCartAccess(ctx, item.cartId);
+    if (cart.completedAt !== undefined) {
       throw new Error("Cart not found or already completed");
     }
     await ctx.db.delete(args.cartItemId);
@@ -224,9 +234,8 @@ export const setCustomer = mutation({
     customerId: v.id("customers"),
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
-    const cart = await ctx.db.get("carts", args.cartId);
-    if (!cart || cart.completedAt !== undefined) {
+    const cart = await requireCartAccess(ctx, args.cartId);
+    if (cart.completedAt !== undefined) {
       throw new Error("Cart not found or already completed");
     }
     await requireDoc(ctx, "customers", args.customerId, "Customer not found");

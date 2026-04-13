@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const customerValidator = schema.tables.customers.validator.extend({
@@ -17,6 +17,7 @@ export const listCustomers = query({
     email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const { userId, email } = args;
     if (userId !== undefined) {
       return await ctx.db
@@ -42,6 +43,7 @@ export const getCustomer = query({
   },
   returns: v.union(v.null(), customerValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("customers", args.customerId);
   },
 });
@@ -60,6 +62,7 @@ export const createCustomer = mutation({
   },
   returns: v.id("customers"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db
       .query("customers")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
@@ -96,6 +99,7 @@ export const updateCustomer = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "customers", args.customerId, "Customer not found");
     const patch = buildPatch({
       email: args.email,

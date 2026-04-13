@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const regionCountryValidator = schema.tables.regionCountries.validator.extend({
@@ -17,6 +17,7 @@ export const listRegionCountries = query({
   },
   returns: v.array(regionCountryValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const { regionId, countryCode } = args;
     if (regionId !== undefined && countryCode !== undefined) {
       return await ctx.db
@@ -51,6 +52,7 @@ export const getRegionCountry = query({
   },
   returns: v.union(v.null(), regionCountryValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("regionCountries", args.regionCountryId);
   },
 });
@@ -63,6 +65,7 @@ export const createRegionCountry = mutation({
   },
   returns: v.id("regionCountries"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(ctx, "regions", args.regionId, "Region not found");
     const existing = await ctx.db
       .query("regionCountries")
@@ -89,6 +92,7 @@ export const updateRegionCountry = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await requireDoc(
       ctx,
       "regionCountries",

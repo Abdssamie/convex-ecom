@@ -2,7 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const inventoryItemValidator = schema.tables.inventoryItems.validator.extend({
@@ -15,6 +15,7 @@ export const listInventoryItems = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db
       .query("inventoryItems")
       .paginate(args.paginationOpts);
@@ -27,6 +28,7 @@ export const getInventoryItem = query({
   },
   returns: v.union(v.null(), inventoryItemValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("inventoryItems", args.inventoryItemId);
   },
 });
@@ -42,6 +44,7 @@ export const createInventoryItem = mutation({
   },
   returns: v.id("inventoryItems"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.insert("inventoryItems", {
       sku: args.sku,
       title: args.title,
@@ -64,6 +67,7 @@ export const updateInventoryItem = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "inventoryItems",

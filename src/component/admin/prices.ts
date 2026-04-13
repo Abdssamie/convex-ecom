@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import schema from "../schema";
+import { requireAdmin } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const priceValidator = schema.tables.prices.validator.extend({
@@ -17,6 +18,7 @@ export const listPricesByVariant = query({
   },
   returns: v.array(priceValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const priceListId = args.priceListId as Id<"priceLists"> | null | undefined;
     if (priceListId === undefined) {
       return await ctx.db
@@ -41,6 +43,7 @@ export const listPricesByPriceList = query({
   },
   returns: v.array(priceValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db
       .query("prices")
       .withIndex("by_price_list_id", (q) =>
@@ -56,6 +59,7 @@ export const createPrice = mutation({
   },
   returns: v.id("prices"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const variant = await ctx.db.get("variants", args.price.variantId);
     if (!variant) {
       throw new Error("Variant not found");
@@ -97,6 +101,7 @@ export const updatePrice = mutation({
     priceListId: v.optional(v.union(v.null(), v.id("priceLists"))),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db.get("prices", args.priceId);
     if (!existing) {
       throw new Error("Price not found");
@@ -156,6 +161,7 @@ export const deletePrice = mutation({
     priceId: v.id("prices"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db.get("prices", args.priceId);
     if (!existing) {
       return;

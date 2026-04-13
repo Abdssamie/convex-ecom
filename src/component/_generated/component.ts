@@ -3885,8 +3885,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getCart: FunctionReference<
           "query",
           "internal",
-          { cartId: string },
-          null | {
+          {
+            cartId: string;
+            itemsPaginationOpts?: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
             cart: {
               _creationTime: number;
               _id: string;
@@ -3920,6 +3930,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               variantSku?: string;
               variantTitle?: string;
             }>;
+            itemsContinueCursor?: string;
           },
           Name
         >;
@@ -4036,8 +4047,18 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getCart: FunctionReference<
           "query",
           "internal",
-          { cartId: string },
-          null | {
+          {
+            cartId: string;
+            itemsPaginationOpts?: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+          },
+          {
             cart: {
               _creationTime: number;
               _id: string;
@@ -4071,13 +4092,24 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               variantSku?: string;
               variantTitle?: string;
             }>;
+            itemsContinueCursor?: string;
           },
           Name
         >;
         getOrder: FunctionReference<
           "query",
           "internal",
-          { orderId: string },
+          {
+            itemsPaginationOpts?: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            orderId: string;
+          },
           null | {
             addresses: Array<{
               _creationTime: number;
@@ -4123,6 +4155,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               version: number;
               writtenOffQuantity: number;
             }>;
+            itemsContinueCursor?: string;
             order: {
               _creationTime: number;
               _id: string;
@@ -4168,39 +4201,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               shippingOptionId?: string;
             }>;
           },
-          Name
-        >;
-        handleStripePaymentIntent: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            amount: number;
-            currency: string;
-            paymentId?: string;
-            paymentIntentId: string;
-            status:
-              | "succeeded"
-              | "canceled"
-              | "processing"
-              | "requires_action"
-              | "requires_confirmation"
-              | "requires_payment_method"
-              | "requires_capture"
-              | "payment_failed";
-          },
-          any,
-          Name
-        >;
-        handleStripeRefund: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            amountRefunded: number;
-            currency: string;
-            paymentId?: string;
-            paymentIntentId: string;
-          },
-          any,
           Name
         >;
         listBlogPosts: FunctionReference<
@@ -4356,7 +4356,17 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
         getOrder: FunctionReference<
           "query",
           "internal",
-          { orderId: string },
+          {
+            itemsPaginationOpts?: {
+              cursor: string | null;
+              endCursor?: string | null;
+              id?: number;
+              maximumBytesRead?: number;
+              maximumRowsRead?: number;
+              numItems: number;
+            };
+            orderId: string;
+          },
           null | {
             addresses: Array<{
               _creationTime: number;
@@ -4402,6 +4412,7 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
               version: number;
               writtenOffQuantity: number;
             }>;
+            itemsContinueCursor?: string;
             order: {
               _creationTime: number;
               _id: string;
@@ -4535,41 +4546,6 @@ export type ComponentApi<Name extends string | undefined = string | undefined> =
           "action",
           "internal",
           { paymentIntentId: string },
-          any,
-          Name
-        >;
-      };
-      stripeWebhooks: {
-        handleStripePaymentIntent: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            amount: number;
-            currency: string;
-            paymentId?: string;
-            paymentIntentId: string;
-            status:
-              | "succeeded"
-              | "canceled"
-              | "processing"
-              | "requires_action"
-              | "requires_confirmation"
-              | "requires_payment_method"
-              | "requires_capture"
-              | "payment_failed";
-          },
-          any,
-          Name
-        >;
-        handleStripeRefund: FunctionReference<
-          "mutation",
-          "internal",
-          {
-            amountRefunded: number;
-            currency: string;
-            paymentId?: string;
-            paymentIntentId: string;
-          },
           any,
           Name
         >;

@@ -4,11 +4,17 @@ import type { MutationCtx } from "../_generated/server";
 import type { Id } from "../_generated/dataModel";
 import { paginationOptsValidator } from "convex/server";
 import schema from "../schema";
-import { requireDoc, requireIdentity } from "../shared/guards";
+import {
+  requireCartAccess,
+  requireCustomerAccess,
+  requireDoc,
+  requireOrderAccess,
+} from "../shared/guards";
 import {
   orderStatusValidator,
   paymentStatusValidator,
 } from "../shared/validators";
+import { requireActivePriceList } from "./pricing";
 
 const orderValidator = schema.tables.orders.validator.extend({
   _id: v.id("orders"),
@@ -40,7 +46,7 @@ export const createOrderFromCart = mutation({
   },
   returns: v.id("orders"),
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
+    await requireCartAccess(ctx, args.cartId);
     return await createOrderFromCartImpl(ctx, args);
   },
 });
@@ -59,6 +65,7 @@ export const createOrderFromCartInternal = internalMutation({
 export const getOrder = query({
   args: {
     orderId: v.id("orders"),
+    itemsPaginationOpts: v.optional(paginationOptsValidator),
   },
   returns: v.union(
     v.null(),
@@ -67,31 +74,39 @@ export const getOrder = query({
       items: v.array(orderItemValidator),
       addresses: v.array(orderAddressValidator),
       shippingMethods: v.array(orderShippingMethodValidator),
+      itemsContinueCursor: v.optional(v.string()),
     }),
   ),
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
-    const order = await ctx.db.get("orders", args.orderId);
-    if (!order) {
-      return null;
-    }
+    const order = await requireOrderAccess(ctx, args.orderId);
 
-    const [items, addresses, shippingMethods] = await Promise.all([
-      ctx.db
-        .query("orderItems")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-      ctx.db
-        .query("orderAddresses")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-      ctx.db
-        .query("orderShippingMethods")
-        .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
-        .collect(),
-    ]);
+    const itemsPaginationOpts = args.itemsPaginationOpts ?? {
+      numItems: 100,
+      cursor: null,
+    };
 
-    return { order, items, addresses, shippingMethods };
+    const paginatedItems = await ctx.db
+      .query("orderItems")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .paginate(itemsPaginationOpts);
+
+    const addresses = await ctx.db
+      .query("orderAddresses")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    const shippingMethods = await ctx.db
+      .query("orderShippingMethods")
+      .withIndex("by_order_id", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    return {
+      order,
+      items: paginatedItems.page,
+      addresses,
+      shippingMethods,
+      itemsContinueCursor: paginatedItems.continueCursor,
+    };
   },
 });
 
@@ -101,7 +116,7 @@ export const listOrdersByCustomer = query({
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
+    await requireCustomerAccess(ctx, args.customerId);
     return await ctx.db
       .query("orders")
       .withIndex("by_customer", (q) => q.eq("customerId", args.customerId))
@@ -116,8 +131,7 @@ export const setOrderStatus = mutation({
     status: orderStatusValidator,
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
-    await requireDoc(ctx, "orders", args.orderId, "Order not found");
+    await requireOrderAccess(ctx, args.orderId);
     const patch =
       args.status === "canceled"
         ? { status: args.status, canceledAt: Date.now() }
@@ -132,8 +146,7 @@ export const setOrderPaymentStatus = mutation({
     paymentStatus: paymentStatusValidator,
   },
   handler: async (ctx, args) => {
-    await requireIdentity(ctx);
-    await requireDoc(ctx, "orders", args.orderId, "Order not found");
+    await requireOrderAccess(ctx, args.orderId);
     await ctx.db.patch(args.orderId, { paymentStatus: args.paymentStatus });
   },
 });
@@ -162,6 +175,9 @@ async function createOrderFromCartImpl(
       cart.salesChannelId,
       "Sales channel not found",
     );
+  }
+  if (cart.priceListId) {
+    await requireActivePriceList(ctx, cart.priceListId);
   }
 
   const items = await ctx.db
@@ -219,9 +235,7 @@ async function createOrderFromCartImpl(
     .withIndex("by_cart_id", (q) => q.eq("cartId", args.cartId))
     .collect();
 
-  if (orderAddresses.length === 0) {
-    throw new Error("Order addresses are required to create an order");
-  }
+  validateOrderAddresses(orderAddresses);
 
   await Promise.all(
     orderAddresses.map((address) =>
@@ -242,6 +256,38 @@ async function createOrderFromCartImpl(
   await ctx.db.patch(args.cartId, { completedAt: Date.now() });
 
   return orderId;
+}
+
+function validateOrderAddresses(
+  orderAddresses: Array<Infer<typeof orderAddressValidator>>,
+) {
+  if (orderAddresses.length === 0) {
+    throw new Error("Order addresses are required to create an order");
+  }
+
+  const shippingAddress = orderAddresses.find(
+    (address) => address.role === "shipping",
+  );
+  if (!shippingAddress) {
+    throw new Error("Shipping address is required to create an order");
+  }
+
+  for (const address of orderAddresses) {
+    for (const field of [
+      "firstName",
+      "lastName",
+      "address1",
+      "city",
+      "countryCode",
+      "postalCode",
+    ] as const) {
+      if (!address[field]) {
+        throw new Error(
+          `${address.role} address ${field} is required to create an order`,
+        );
+      }
+    }
+  }
 }
 
 export const seedPriceListScenario = internalMutation({

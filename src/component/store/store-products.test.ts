@@ -77,4 +77,27 @@ describe("store products", () => {
       });
     }).rejects.toThrowError("Price list not found");
   });
+
+  test("list products paginates consistently", async () => {
+    const t = initConvexTest();
+
+    for (const amount of [1000, 2000, 3000]) {
+      await createVariantWithPrice(t, "usd", amount);
+    }
+
+    const firstPage = await t.query(api.store.products.listProducts, {
+      paginationOpts: { numItems: 2, cursor: null },
+      currencyCode: "usd",
+    });
+    const secondPage = await t.query(api.store.products.listProducts, {
+      paginationOpts: { numItems: 2, cursor: firstPage.continueCursor },
+      currencyCode: "usd",
+    });
+
+    expect(firstPage.page).toHaveLength(2);
+    expect(secondPage.page).toHaveLength(1);
+    expect(firstPage.page[0]?.variants[0]?.price?.amount).toBe(1000);
+    expect(firstPage.page[1]?.variants[0]?.price?.amount).toBe(2000);
+    expect(secondPage.page[0]?.variants[0]?.price?.amount).toBe(3000);
+  });
 });

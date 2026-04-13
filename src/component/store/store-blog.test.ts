@@ -101,4 +101,29 @@ describe("store blog", () => {
     expect(secondPage.page).toHaveLength(1);
     expect(secondPage.page[0]?.handle).toBe("beta");
   });
+
+  test("list blog tags paginates consistently", async () => {
+    const t = initConvexTest();
+
+    const tagNames = ["alpha", "beta", "gamma"];
+    for (const tagName of tagNames) {
+      await t.mutation(api.admin.blogTags.createBlogTag, {
+        name: tagName,
+        handle: `tag-${tagName}`,
+      });
+    }
+
+    const firstPage = await t.query(api.store.blog.listBlogTags, {
+      paginationOpts: { numItems: 2, cursor: null },
+    });
+    const secondPage = await t.query(api.store.blog.listBlogTags, {
+      paginationOpts: { numItems: 2, cursor: firstPage.continueCursor },
+    });
+
+    expect(firstPage.page).toHaveLength(2);
+    expect(secondPage.page).toHaveLength(1);
+    expect(firstPage.page[0]?.name).toBe("alpha");
+    expect(firstPage.page[1]?.name).toBe("beta");
+    expect(secondPage.page[0]?.name).toBe("gamma");
+  });
 });

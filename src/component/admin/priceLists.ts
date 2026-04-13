@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import {
   priceListStatusValidator,
   priceListTypeValidator,
@@ -20,6 +20,7 @@ export const listPriceLists = query({
   },
   returns: v.array(priceListValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     if (args.status === undefined) {
       return await ctx.db.query("priceLists").take(args.limit ?? 50);
     }
@@ -37,6 +38,7 @@ export const getPriceList = query({
   },
   returns: v.union(v.null(), priceListValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("priceLists", args.priceListId);
   },
 });
@@ -47,6 +49,7 @@ export const createPriceList = mutation({
   },
   returns: v.id("priceLists"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.insert("priceLists", args.priceList);
   },
 });
@@ -64,6 +67,7 @@ export const updatePriceList = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "priceLists",
@@ -95,6 +99,7 @@ export const deletePriceList = mutation({
     priceListId: v.id("priceLists"),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "priceLists",

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "../_generated/server";
 import schema from "../schema";
-import { requireDoc } from "../shared/guards";
+import { requireAdmin, requireDoc } from "../shared/guards";
 import { buildPatch } from "../shared/utils";
 
 const salesChannelValidator = schema.tables.salesChannels.validator.extend({
@@ -17,6 +17,7 @@ export const listSalesChannels = query({
   },
   returns: v.array(salesChannelValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const { name, isDisabled } = args;
     if (name !== undefined) {
       return await ctx.db
@@ -42,6 +43,7 @@ export const getSalesChannel = query({
   },
   returns: v.union(v.null(), salesChannelValidator),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.get("salesChannels", args.salesChannelId);
   },
 });
@@ -55,6 +57,7 @@ export const createSalesChannel = mutation({
   },
   returns: v.id("salesChannels"),
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     return await ctx.db.insert("salesChannels", {
       name: args.name,
       description: args.description,
@@ -73,6 +76,7 @@ export const updateSalesChannel = mutation({
     metadata: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     await requireDoc(
       ctx,
       "salesChannels",

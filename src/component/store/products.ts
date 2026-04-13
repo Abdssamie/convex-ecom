@@ -4,7 +4,6 @@ import { requireDoc } from "../shared/guards";
 import { getBasePriceForVariant } from "./pricing";
 import { paginationOptsValidator } from "convex/server";
 
-
 export const listProducts = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -48,11 +47,14 @@ export const listProducts = query({
               args.priceListId,
               isPriceListActive,
             );
-            return { ...variant, price: price ?? null };
+            return { variant, price: price ?? null };
           }),
         );
 
-        return { product, variants: variantsWithPrice };
+        return {
+          product,
+          variants: variantsWithPrice,
+        };
       }),
     );
 
