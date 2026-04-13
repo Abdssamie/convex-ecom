@@ -19,5 +19,6 @@ export { createCheckoutSession, syncPaymentIntent } from "./stripe";
 export {
   handleStripePaymentIntent,
   handleStripeRefund,
+  handleSignedStripeWebhook,
 } from "./stripeWebhooks";
 export { listBlogPosts, getBlogPostByHandle, listBlogTags } from "./blog";
